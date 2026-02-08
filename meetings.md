@@ -1,12 +1,14 @@
 # Meetings minutes
 
 ## Meeting 1.
-* **DATE:**
-* **PARTICIPANTS:**
-* **TEACHER:**
+* **DATE:** 06.02
+* **PARTICIPANTS:** Niklas Raesalmi, Md. Nur-e-ferdaus, Niranjan Sreegith, Huan Vo
+* **TEACHER:** Mika Oja
 
 ### Action points
 *List here the actions points discussed with assistants*
+- Reduce the number of concepts, it was mutually discussed and decided that we would get rid of the recommendations feature. 
+- In case if we add recommendation then that would need mor ework like creaing more resources like order history.
 
 ### Notes
 *Add here notes that you consider important. This is not mandatory*
