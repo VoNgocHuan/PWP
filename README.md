@@ -18,4 +18,5 @@ pip install -r requirements.txt
 You can create and populate the DB using this command:
 python init_db.py
 
+The populated DB exists in the /instace folder as 'developments.db' in addition to the sql dump.
 
