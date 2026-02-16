@@ -15,16 +15,20 @@
 
 
 ## Meeting 2.
-* **DATE:**
-* **PARTICIPANTS:**
-* **TEACHER:**
+* **DATE:** 16.02.2026
+* **PARTICIPANTS:** Niklas Raesalmi, MD. Nur-E Ferdaus
+* **TEACHER:** Mika Oja
 
 ### Action points
 *List here the actions points discussed with assistants*
+- Recommend using python "Black" for formatting the code.
+- Replace requirements.txt with pyproject.
+- Refine project structure.
+- Add heading for instructions in REAME.md file.
 
 ### Notes
 *Add here notes that you consider important. This is not mandatory*
-
+- SQL table order structure was discussed and that formatting of one-row one-ticket is the best structure for performance instead of the considered Json formatting.
 
 ## Meeting 3.
 * **DATE:**
