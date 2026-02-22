@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Order",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["user_id", "ticket_id"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "user_id": {
+      "type": "integer",
+      "description": "Foreign key referencing User.id"
+    },
+    "ticket_id": {
+      "type": "integer",
+      "description": "Foreign key referencing Ticket.id"
+    },
+    "status": {
+      "type": "string",
+      "maxLength": 20,
+      "enum": ["used", "not_used"],
+      "default": "not_used"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  }
+}

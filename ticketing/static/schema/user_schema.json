@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "User",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "email"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "name": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1,
+      "pattern": "^[A-Za-z]+\\s[A-Za-z]+.*$",
+      "description": "Full name in format Firstname Lastname"
+    },
+    "email": {
+      "type": "string",
+      "maxLength": 250,
+      "format": "email"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "disabled"],
+      "default": "active"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  }
+}

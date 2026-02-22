@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "venue", "city", "starts_at"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 250,
+      "minLength": 1
+    },
+    "venue": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1
+    },
+    "city": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "starts_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ends_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "maxLength": 20,
+      "enum": ["active", "cancelled"],
+      "default": "active"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  }
+}
