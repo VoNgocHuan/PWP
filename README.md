@@ -9,11 +9,12 @@
 
 __Remember to include all required documentation and HOWTOs, including how to create and populate the database, how to run and test the API, the url to the entrypoint, instructions on how to setup and run the client, instructions on how to setup and run the axiliary service and instructions on how to deploy the api in a production environment__
 
-Database used: SQLite
-SQLite version: 3.50.4
-
 ## Instructions
-Installing deps:
+
+Database used: SQLite
+SQLite version: 3.50.4 
+
+### Installing deps:
 pip install -r requirements.txt
 
 You can create and populate the DB using this command:
