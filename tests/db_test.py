@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from sqlalchemy.exc import IntegrityError, OperationalError
-from models import app, db, User, Event, Ticket, Order
+from ticketing.models import app, db, User, Event, Ticket, Order
 
 def seed():
     alice = User(name="Alice Smith", email="alice.smith@hotmail.com")
