@@ -3,7 +3,7 @@
 # Group information
 * Student 1. Niklas Raesalmi, email
 * Student 2. Huan Vo, hvo22@student.oulu.fi
-* Student 3. Niranjan Sreegith, email
+* Student 3. Niranjan Sreegith, nsreegit22@student.oulu.fi
 * Student 4. MD. Nur-E Ferdaus, email
 
 
