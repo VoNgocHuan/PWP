@@ -1,21 +1,27 @@
+"""Data models for the ticketing system."""
+import os
+from datetime import datetime
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
-from sqlalchemy.exc import IntegrityError, OperationalError
 
 app = Flask(__name__, static_folder="static")
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///development.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///development.db")
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
+    """Enable foreign key constraints in SQLite,
+     which are disabled by default."""
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
 class User(db.Model):
+    """Users represent a person who can purchase tickets."""
     __tablename__ = "users"
     __table_args__ = (
         db.CheckConstraint(
@@ -29,7 +35,7 @@ class User(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    #must be first name, last name 
+    #must be first name, last name
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
     status = db.Column(db.String(20), nullable=False, default="active")
@@ -38,8 +44,42 @@ class User(db.Model):
 
     def __repr__(self):
         return "{} <{}> ({})".format(self.email, self.id, self.status)
-    
+
+    def serialize(self):
+        """Serialize user to a dictionary."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "status": self.status,
+            "created_at": self.created_at.isoformat()
+        }
+
+    def deserialize(self, doc):
+        """Deserialize user data from a dictionary."""
+        self.name = doc["name"]
+        self.email = doc["email"]
+        self.status = doc.get("status", "active")
+
+    @staticmethod
+    def json_schema():
+        """JSON schema for user creation and update."""
+        return {
+            "type": "object",
+            "required": ["name", "email"],
+            "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string"},
+                "status": {
+                    "type": "string",
+                    "enum": ["active", "disabled"]
+                }
+            }
+        }
+
 class Event(db.Model):
+    """Events represent a specific event with a title, venue, 
+    city, description, start and end time, and status."""
     __tablename__ = "events"
 
     __table_args__ = (
@@ -51,7 +91,7 @@ class Event(db.Model):
             "ends_at IS NULL OR starts_at < ends_at",
             name="ck_events_time_valid"
         ),
-    )    
+    ) 
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -63,12 +103,71 @@ class Event(db.Model):
     status = db.Column(db.String(20), nullable=False, default="active")
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
-    ticket = db.relationship("Ticket", cascade="all, delete-orphan", back_populates="event", passive_deletes=True, order_by="Ticket.id")
+    ticket = db.relationship("Ticket", 
+                            cascade="all, delete-orphan",
+                            back_populates="event",
+                            passive_deletes=True,
+                            order_by="Ticket.id")
 
     def __repr__(self):
         return "{} <{}> ({})".format(self.title, self.id, self.status)
-    
+
+    def serialize(self):
+        """Serialize event to a dictionary."""
+        return {
+            "id": self.id,
+            "title": self.title,
+            "venue": self.venue,
+            "city": self.city,
+            "description": self.description,
+            "starts_at": self.starts_at.isoformat(),
+            "ends_at": self.ends_at and self.ends_at.isoformat(),
+            "status": self.status
+        }
+
+    def deserialize(self, doc):
+        """Deserialize event data from a dictionary."""
+        self.title = doc["title"]
+        self.venue = doc["venue"]
+        self.city = doc["city"]
+        self.description = doc.get("description")
+        self.starts_at = datetime.fromisoformat(doc["starts_at"])
+        self.ends_at = (
+            datetime.fromisoformat(doc["ends_at"])
+            if doc.get("ends_at")
+            else None
+        )
+        self.status = doc.get("status", "active")
+
+    @staticmethod
+    def json_schema():
+        """JSON schema for event creation and update."""
+        return {
+            "type": "object",
+            "required": ["title", "venue", "city", "starts_at"],
+            "properties": {
+                "title": {"type": "string"},
+                "venue": {"type": "string"},
+                "city": {"type": "string"},
+                "description": {"type": "string"},
+                "starts_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "ends_at": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["active", "cancelled"]
+                }
+            }
+        }
+
 class Ticket(db.Model):
+    """Tickets represent a specific type of ticket for an event,
+     with a name, price, and capacity."""
     __tablename__ = "tickets"
 
     __table_args__ = (
@@ -101,12 +200,47 @@ class Ticket(db.Model):
     capacity = db.Column(db.Integer, nullable=False)
     remaining = db.Column(db.Integer, nullable=False)
     event = db.relationship("Event", back_populates="ticket")
-    orders = db.relationship("Order", back_populates="ticket", passive_deletes=True, order_by="Order.created_at")
+    orders = db.relationship("Order", back_populates="ticket",
+                            passive_deletes=True,
+                            order_by="Order.created_at")
 
     def __repr__(self):
+        """Readable string representation of the ticket."""
         return "{} <{}> (Event {})".format(self.name, self.id, self.event_id)
-    
+
+    def serialize(self):
+        """Serialize ticket to a dictionary."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "price": float(self.price),
+            "capacity": self.capacity,
+            "remaining": self.remaining
+        }
+
+    def deserialize(self, doc):
+        """Deserialize ticket data from a dictionary."""
+        self.name = doc["name"]
+        self.price = doc["price"]
+        self.capacity = doc["capacity"]
+        self.remaining = doc["capacity"]
+
+    @staticmethod
+    def json_schema():
+        """JSON schema for ticket creation and update."""
+        return {
+            "type": "object",
+            "required": ["name", "price", "capacity"],
+            "properties": {
+                "name": {"type": "string"},
+                "price": {"type": "number", "minimum": 0},
+                "capacity": {"type": "integer", "minimum": 0}
+            }
+        }
+
 class Order(db.Model):
+    """Orders represent a purchase of a ticket by a user. 
+    The status field indicates whether the ticket has been used or not."""
     __tablename__ = "orders"
 
     __table_args__ = (
@@ -118,11 +252,35 @@ class Order(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id", ondelete="RESTRICT"), nullable=False)
+    ticket_id = db.Column(db.Integer, db.ForeignKey("tickets.id", ondelete="RESTRICT"),
+                        nullable=False)
     status = db.Column(db.String(20), nullable=False, default="not_used")
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
     user = db.relationship("User", back_populates="orders")
     ticket = db.relationship("Ticket", back_populates="orders")
 
     def __repr__(self):
+        """Readable string representation of the order."""
         return "Order <{}> user={} ticket={} status={}".format(self.id, self.user_id, self.ticket_id, self.status)
+
+    def serialize(self):
+        """Serialize order to a dictionary."""
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "ticket_id": self.ticket_id,
+            "status": self.status,
+            "created_at": self.created_at.isoformat()
+        }
+
+    @staticmethod
+    def json_schema():
+        """JSON schema for order creation."""
+        return {
+            "type": "object",
+            "required": ["user_id", "ticket_id"],
+            "properties": {
+                "user_id": {"type": "integer"},
+                "ticket_id": {"type": "integer"}
+            }
+        }

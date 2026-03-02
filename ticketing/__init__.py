@@ -1,0 +1,1 @@
+"""Left empty on purpose, it's just a package initializer for the ticketing resources."""
