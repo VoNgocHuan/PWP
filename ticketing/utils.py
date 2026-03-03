@@ -5,63 +5,57 @@ from werkzeug.routing import BaseConverter
 from . import db
 from .models import User, Event, Ticket, Order
 
-# SCHEMA_DIR = Path(__file__).parent / "static" / "schema"
-
-# def load_schema(name: str) -> dict:
-#     """Load a JSON schema from a file."""
-#     path = SCHEMA_DIR / f"{name}_schema.json"
-#     if not path.exists():
-#         raise FileNotFoundError(f"Schema file {path} not found")
-#     with open(path, encoding="utf-8") as f:
-#         return json.load(f)
-
-# def validate_json(data: dict, schema_name: str):
-#     """Validate JSON data against a schema loaded from a file."""
-#     schema = load_schema(schema_name)
-#     try:
-#         Draft202012Validator(schema).validate(data)
-#     except ValidationError as e:
-#         raise BadRequest(f"Invalid request: {e.message}") from e
-
 class UserConverter(BaseConverter):
+    """URL converter for User resources"""
     def to_python(self, value):
+        """Convert a user ID from the URL to a User object."""
         user = db.session.get(User, value)
         if user is None:
             raise NotFound
         return user
 
     def to_url(self, value):
+        """Convert a User object to a URL component (ID)."""
         return str(value.id)
 
 
 class EventConverter(BaseConverter):
+    """URL converter for Event resources"""
     def to_python(self, value):
+        """Convert an event ID from the URL to an Event object."""
         event = db.session.get(Event, value)
         if event is None:
             raise NotFound
         return event
 
     def to_url(self, value):
+        """Convert an Event object to a URL component(ID)."""
         return str(value.id)
 
 
 class TicketConverter(BaseConverter):
+    """URL converter for Ticket resources"""
     def to_python(self, value):
+        """Convert a ticket ID from the URL to a Ticket object."""
         ticket = db.session.get(Ticket, value)
         if ticket is None:
             raise NotFound
         return ticket
 
     def to_url(self, value):
+        """Convert a Ticket object to a URL component (ID)."""
         return str(value.id)
 
 
 class OrderConverter(BaseConverter):
+    """URL converter for Order resources"""
     def to_python(self, value):
+        """Convert an order ID from the URL to an Order object."""
         order = db.session.get(Order, value)
         if order is None:
             raise NotFound
         return order
 
     def to_url(self, value):
+        """Convert an Order object to a URL component (ID)."""
         return str(value.id)

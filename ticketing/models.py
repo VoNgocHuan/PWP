@@ -1,19 +1,11 @@
 """Data models for the ticketing system."""
 import click
 from datetime import datetime
-#from flask import Flask
-#from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from flask.cli import with_appcontext
 from sqlalchemy import event
 
 from . import db
-
-# app = Flask(__name__, static_folder="static")
-# DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///development.db")
-# app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# db = SQLAlchemy(app)
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -99,7 +91,7 @@ class Event(db.Model):
             "ends_at IS NULL OR starts_at < ends_at",
             name="ck_events_time_valid"
         ),
-    ) 
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
@@ -111,14 +103,14 @@ class Event(db.Model):
     status = db.Column(db.String(20), nullable=False, default="active")
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
-    ticket = db.relationship("Ticket", 
+    ticket = db.relationship("Ticket",
                             cascade="all, delete-orphan",
                             back_populates="event",
                             passive_deletes=True,
                             order_by="Ticket.id")
 
     def __repr__(self):
-        return "{} <{}> ({})".format(self.title, self.id, self.status)
+        return f"<Event {self.title} ({self.id}, {self.status})>"
 
     def serialize(self):
         """Serialize event to a dictionary."""
@@ -214,7 +206,7 @@ class Ticket(db.Model):
 
     def __repr__(self):
         """Readable string representation of the ticket."""
-        return "{} <{}> (Event {})".format(self.name, self.id, self.event_id)
+        return f"<Ticket {self.name} ({self.id}) for Event {self.event_id}>"
 
     def serialize(self):
         """Serialize ticket to a dictionary."""
@@ -269,7 +261,7 @@ class Order(db.Model):
 
     def __repr__(self):
         """Readable string representation of the order."""
-        return "Order <{}> user={} ticket={} status={}".format(self.id, self.user_id, self.ticket_id, self.status)
+        return f"<Order {self.id} for User {self.user_id} and Ticket {self.ticket_id} ({self.status})>"
 
     def serialize(self):
         """Serialize order to a dictionary."""

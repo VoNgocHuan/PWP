@@ -4,7 +4,7 @@ from flask_restful import Api
 from .resources.user import UserCollection, UserItem
 from .resources.event import EventCollection, EventItem
 from .resources.ticket import TicketCollection, TicketItem
-from .resources.order import OrderCollection, OrderItem
+from .resources.order import OrderCollection, OrderItem, UserOrderCollection
 from . import views
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
@@ -23,3 +23,4 @@ api.add_resource(TicketItem, "/events/<event:event>/tickets/<ticket:ticket>/")
 
 api.add_resource(OrderCollection, "/orders/")
 api.add_resource(OrderItem, "/orders/<order:order>/")
+api.add_resource(UserOrderCollection, "/users/<user:user>/orders/")
