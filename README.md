@@ -38,7 +38,7 @@ DB located in:
 pip install -r requirements.txt
 
 You can start the app by pasting this command in the venv:
-python -c "from ticketing.models import app; import ticketing.api; app.run(debug=True)"
+flask --app=ticketing --debug run
 
 The populated DB exists in the /instace folder as 'developments.db' in addition to the sql dump.
 
