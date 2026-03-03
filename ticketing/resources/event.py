@@ -67,6 +67,11 @@ class EventItem(Resource):
 
         event.deserialize(request.json)
 
+        has_orders = any(ticket.orders for ticket in event.ticket)
+        if has_orders:
+            from werkzeug.exceptions import Conflict
+            raise Conflict("Cannot update event with existing orders")
+
         try:
             db.session.commit()
         except IntegrityError as exc:

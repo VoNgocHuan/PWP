@@ -38,7 +38,7 @@ class User(db.Model):
     orders = db.relationship("Order",
                             cascade="all, delete-orphan",
                             back_populates="user",
-                            passive_deletes=True,
+                            passive_deletes=False,
                             order_by="Order.created_at")
 
     def __repr__(self):
@@ -106,7 +106,7 @@ class Event(db.Model):
     ticket = db.relationship("Ticket",
                             cascade="all, delete-orphan",
                             back_populates="event",
-                            passive_deletes=True,
+                            passive_deletes=False,
                             order_by="Ticket.id")
 
     def __repr__(self):
