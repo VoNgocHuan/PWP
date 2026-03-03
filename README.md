@@ -15,12 +15,15 @@ __Remember to include all required documentation and HOWTOs, including how to cr
 - Flask
 - Flask-RESTful
 - Flask-SQLAlchemy
+- SQLAlchemy
 - jsonschema
 
 Testing:
 - pytest
 - pytest-cov
 - pylint
+- SQLAlchemy
+- Werkzeug
 
 All Python dependencies are encoded in:
 - `requirements.txt`
@@ -42,3 +45,12 @@ flask --app=ticketing --debug run
 
 The populated DB exists in the /instace folder as 'developments.db' in addition to the sql dump.
 
+### How to run tests
+
+Run tests and coverage:
+pytest --cov=ticketing --cov-report=term-missing --cov-report=html
+
+Coverage HTML report will be generated in 'htmlcov/'.
+
+Also linting the code can be done using this command:
+pylint ticketing --disable=no-member,import-outside-toplevel,no-self-use

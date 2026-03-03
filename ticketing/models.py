@@ -284,10 +284,3 @@ class Order(db.Model):
                 "ticket_id": {"type": "integer"}
             }
         }
-
-#we may not need this
-@click.command("init-db")
-@with_appcontext
-def init_db_command():
-    """Create all tables in the configured database."""
-    db.create_all()
