@@ -1,5 +1,5 @@
 """Resources for managing tickets in the ticketing application."""
-from flask import request, Response
+from flask import request, Response, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -9,23 +9,25 @@ from werkzeug.exceptions import (
     NotFound,
     UnsupportedMediaType,
 )
-from werkzeug.routing import BaseConverter
+#from werkzeug.routing import BaseConverter
 
-from ..models import db, Ticket, app
+from .. import db
+from ..models import Ticket
 
 class TicketCollection(Resource):
     """Resource for the collection of tickets for a specific event"""
     def get(self, event):
         """Get a list of all tickets for the given event."""
         response_data = []
-        tickets = Ticket.query.all()
+        #tickets = Ticket.query.all()
+        tickets = Ticket.query.filter_by(event_id=event.id).all()
         for ticket in tickets:
             response_data.append(ticket.serialize())
         return response_data
 
     def post(self, event):
         """Create a new ticket for the given event."""
-        from ..api import api
+        #from ..api import api
         if not request.is_json:    
             raise UnsupportedMediaType
         try:
@@ -47,11 +49,7 @@ class TicketCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(
-                    TicketItem,
-                    event=event,
-                    ticket=ticket
-                )
+                "Location": url_for("api.ticketitem", event=event, ticket=ticket)        
             },
         )
 
@@ -76,17 +74,17 @@ class TicketItem(Resource):
             raise Conflict("Cannot delete ticket with existing orders") from exc
         return Response(status=204)
 
-class TicketConverter(BaseConverter):
-    """URL converter for Ticket resources."""
-    def to_python(self, value):
-        """Convert a URL component (ticket ID) to a Ticket object."""
-        ticket = db.session.get(Ticket, value)
-        if ticket is None:
-            raise NotFound
-        return ticket
+# class TicketConverter(BaseConverter):
+#     """URL converter for Ticket resources."""
+#     def to_python(self, value):
+#         """Convert a URL component (ticket ID) to a Ticket object."""
+#         ticket = db.session.get(Ticket, value)
+#         if ticket is None:
+#             raise NotFound
+#         return ticket
 
-    def to_url(self, value):
-        """Convert a Ticket object to a URL component (its ID)."""
-        return str(value.id)
+#     def to_url(self, value):
+#         """Convert a Ticket object to a URL component (its ID)."""
+#         return str(value.id)
 
-app.url_map.converters["ticket"] = TicketConverter
+# app.url_map.converters["ticket"] = TicketConverter

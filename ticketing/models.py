@@ -1,16 +1,19 @@
 """Data models for the ticketing system."""
-import os
+import click
 from datetime import datetime
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+#from flask import Flask
+#from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
+from flask.cli import with_appcontext
 from sqlalchemy import event
 
-app = Flask(__name__, static_folder="static")
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///development.db")
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db = SQLAlchemy(app)
+from . import db
+
+# app = Flask(__name__, static_folder="static")
+# DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///development.db")
+# app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+# app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# db = SQLAlchemy(app)
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -40,10 +43,14 @@ class User(db.Model):
     email = db.Column(db.String(250), unique=True, nullable=False)
     status = db.Column(db.String(20), nullable=False, default="active")
     created_at = db.Column(db.DateTime, nullable=False,server_default=db.func.now())
-    orders = db.relationship("Order", cascade="all, delete-orphan", back_populates="user", passive_deletes=True, order_by="Order.created_at")
+    orders = db.relationship("Order",
+                            cascade="all, delete-orphan",
+                            back_populates="user",
+                            passive_deletes=True,
+                            order_by="Order.created_at")
 
     def __repr__(self):
-        return "{} <{}> ({})".format(self.email, self.id, self.status)
+        return f"<User {self.email} ({self.id}, {self.status})>"
 
     def serialize(self):
         """Serialize user to a dictionary."""
@@ -61,6 +68,7 @@ class User(db.Model):
         self.email = doc["email"]
         self.status = doc.get("status", "active")
 
+#may not need json schema here  
     @staticmethod
     def json_schema():
         """JSON schema for user creation and update."""
@@ -155,7 +163,7 @@ class Event(db.Model):
                     "format": "date-time"
                 },
                 "ends_at": {
-                    "type": "string",
+                    "type": ["string", "null"],
                     "format": "date-time"
                 },
                 "status": {
@@ -284,3 +292,10 @@ class Order(db.Model):
                 "ticket_id": {"type": "integer"}
             }
         }
+
+#we may not need this
+@click.command("init-db")
+@with_appcontext
+def init_db_command():
+    """Create all tables in the configured database."""
+    db.create_all()

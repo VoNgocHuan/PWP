@@ -1,21 +1,25 @@
 """API for the ticketing system."""
+from flask import Blueprint
 from flask_restful import Api
-from .models import app
 from .resources.user import UserCollection, UserItem
 from .resources.event import EventCollection, EventItem
 from .resources.ticket import TicketCollection, TicketItem
 from .resources.order import OrderCollection, OrderItem
+from . import views
 
-api = Api(app)
+api_bp = Blueprint("api", __name__, url_prefix="/api")
+api = Api(api_bp)
 
-api.add_resource(UserCollection, "/api/users/")
-api.add_resource(UserItem, "/api/users/<user:user>/")
+api_bp.add_url_rule("/", "entry", views.entry)
 
-api.add_resource(EventCollection, "/api/events/")
-api.add_resource(EventItem, "/api/events/<event:event>/")
+api.add_resource(UserCollection, "/users/")
+api.add_resource(UserItem, "/users/<user:user>/")
 
-api.add_resource(TicketCollection, "/api/events/<event:event>/tickets/")
-api.add_resource(TicketItem, "/api/events/<event:event>/tickets/<ticket:ticket>/")
+api.add_resource(EventCollection, "/events/")
+api.add_resource(EventItem, "/events/<event:event>/")
 
-api.add_resource(OrderCollection, "/api/orders/")
-api.add_resource(OrderItem, "/api/orders/<order:order>/")
+api.add_resource(TicketCollection, "/events/<event:event>/tickets/")
+api.add_resource(TicketItem, "/events/<event:event>/tickets/<ticket:ticket>/")
+
+api.add_resource(OrderCollection, "/orders/")
+api.add_resource(OrderItem, "/orders/<order:order>/")

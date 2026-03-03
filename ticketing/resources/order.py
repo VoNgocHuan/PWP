@@ -1,5 +1,5 @@
 """Resources for managing orders in the ticketing application."""
-from flask import request, Response
+from flask import request, Response, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -9,9 +9,10 @@ from werkzeug.exceptions import (
     NotFound,
     UnsupportedMediaType,
 )
-from werkzeug.routing import BaseConverter
+#from werkzeug.routing import BaseConverter
 
-from ..models import db, Order, User, Ticket, app
+from .. import db
+from ..models import Order, User, Ticket
 
 class OrderCollection(Resource):
     def get(self):
@@ -24,7 +25,7 @@ class OrderCollection(Resource):
 
     def post(self):
         """Create a new order."""
-        from ..api import api
+        #from ..api import api
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -56,11 +57,8 @@ class OrderCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(
-                    OrderItem,
-                    order=order
-                )
-            },
+                "Location": url_for("api.orderitem", order=order)
+            }
         )
 
 class OrderItem(Resource):
@@ -79,18 +77,27 @@ class OrderItem(Resource):
             db.session.rollback()
             raise Conflict("Could not delete order") from exc
         return Response(status=204)
+    
+class UserOrderCollection(Resource):
+    def get(self, user):
+        """Get a list of all orders for a specific user."""
+        response_data = []
+        orders = Order.query.filter_by(user_id=user.id).all()
+        for order in orders:
+            response_data.append(order.serialize())
+        return response_data
 
-class OrderConverter(BaseConverter):
-    """URL converter for Order resources"""
-    def to_python(self, value):
-        """Convert a URL component (order ID) to an Order object."""
-        order = db.session.get(Order, value)
-        if order is None:
-            raise NotFound
-        return order
+# class OrderConverter(BaseConverter):
+#     """URL converter for Order resources"""
+#     def to_python(self, value):
+#         """Convert a URL component (order ID) to an Order object."""
+#         order = db.session.get(Order, value)
+#         if order is None:
+#             raise NotFound
+#         return order
 
-    def to_url(self, value):
-        """Convert an Order object to a URL component (its ID)."""
-        return str(value.id)
+#     def to_url(self, value):
+#         """Convert an Order object to a URL component (its ID)."""
+#         return str(value.id)
 
-app.url_map.converters["order"] = OrderConverter
+# app.url_map.converters["order"] = OrderConverter

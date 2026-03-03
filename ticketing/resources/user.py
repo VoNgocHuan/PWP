@@ -1,17 +1,17 @@
 """Resources for managing users in the ticketing application."""
-from flask import request, Response
+from flask import request, Response, url_for
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import (
     BadRequest,
     Conflict,
-    NotFound,
     UnsupportedMediaType,
 )
-from werkzeug.routing import BaseConverter
+#from werkzeug.routing import BaseConverter
 
-from ..models import db, User, app
+from .. import db
+from ..models import User
 
 class UserCollection(Resource):
     def get(self):
@@ -24,7 +24,7 @@ class UserCollection(Resource):
 
     def post(self):
         """Create a new user."""
-        from ..api import api   
+        #from ..api import api   
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -46,10 +46,7 @@ class UserCollection(Resource):
         return Response(
             status=201,
             headers={
-                "Location": api.url_for(
-                    UserItem,
-                    user=user
-                )
+                "Location": url_for("api.useritem", user=user)
             },
         )
 
@@ -86,17 +83,17 @@ class UserItem(Resource):
         db.session.commit()
         return Response(status=204)
 
-class UserConverter(BaseConverter):
-    """URL converter for User resources."""
-    def to_python(self, value):
-        """Convert a URL component (user ID) to a User object."""
-        user = db.session.get(User, value)
-        if user is None:
-            raise NotFound
-        return user
+# class UserConverter(BaseConverter):
+#     """URL converter for User resources."""
+#     def to_python(self, value):
+#         """Convert a URL component (user ID) to a User object."""
+#         user = db.session.get(User, value)
+#         if user is None:
+#             raise NotFound
+#         return user
 
-    def to_url(self, value):
-        """Convert a User object to a URL component (its ID)."""
-        return str(value.id)
+#     def to_url(self, value):
+#         """Convert a User object to a URL component (its ID)."""
+#         return str(value.id)
 
-app.url_map.converters["user"] = UserConverter
+# app.url_map.converters["user"] = UserConverter
