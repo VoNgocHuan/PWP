@@ -1,5 +1,5 @@
 """Resources for managing orders in the ticketing application."""
-from flask import request, Response, url_for
+from flask import request, Response, url_for, g
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -9,12 +9,13 @@ from werkzeug.exceptions import (
     NotFound,
     UnsupportedMediaType,
 )
-#from werkzeug.routing import BaseConverter
 
 from .. import db
 from ..models import Order, User, Ticket
+from ..auth import require_auth
 
 class OrderCollection(Resource):
+    @require_auth
     def get(self):
         """Get a list of all orders."""
         response_data = []
@@ -23,9 +24,9 @@ class OrderCollection(Resource):
             response_data.append(order.serialize())
         return response_data
 
+    @require_auth
     def post(self):
         """Create a new order."""
-        #from ..api import api
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -34,8 +35,8 @@ class OrderCollection(Resource):
         except ValidationError as e:
             raise BadRequest(str(e)) from e
 
-        user = User.query.get(request.json["user_id"])
-        ticket = Ticket.query.get(request.json["ticket_id"])
+        user = db.session.get(User, request.json["user_id"])
+        ticket = db.session.get(Ticket, request.json["ticket_id"])
 
         if user is None or ticket is None:
             raise NotFound
@@ -62,10 +63,12 @@ class OrderCollection(Resource):
         )
 
 class OrderItem(Resource):
+    @require_auth
     def get(self, order):
         """Get details of a single order."""
         return order.serialize()
 
+    @require_auth
     def delete(self, order):
         """Delete an order."""
         ticket = order.ticket
@@ -79,6 +82,7 @@ class OrderItem(Resource):
         return Response(status=204)
     
 class UserOrderCollection(Resource):
+    @require_auth
     def get(self, user):
         """Get a list of all orders for a specific user."""
         response_data = []

@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy.engine import Engine
 from flask.cli import with_appcontext
 from sqlalchemy import event
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from . import db
 
@@ -30,9 +31,9 @@ class User(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    #must be first name, last name
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
     status = db.Column(db.String(20), nullable=False, default="active")
     created_at = db.Column(db.DateTime, nullable=False,server_default=db.func.now())
     orders = db.relationship("Order",
@@ -58,18 +59,28 @@ class User(db.Model):
         """Deserialize user data from a dictionary."""
         self.name = doc["name"]
         self.email = doc["email"]
+        if "password" in doc:
+            self.set_password(doc["password"])
         self.status = doc.get("status", "active")
 
-#may not need json schema here  
+    def set_password(self, password):
+        """Set the password hash for the user."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        """Check if the provided password matches the hash."""
+        return check_password_hash(self.password_hash, password)
+
     @staticmethod
     def json_schema():
         """JSON schema for user creation and update."""
         return {
             "type": "object",
-            "required": ["name", "email"],
+            "required": ["name", "email", "password"],
             "properties": {
                 "name": {"type": "string"},
                 "email": {"type": "string"},
+                "password": {"type": "string", "minLength": 6},
                 "status": {
                     "type": "string",
                     "enum": ["active", "disabled"]

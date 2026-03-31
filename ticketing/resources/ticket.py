@@ -9,25 +9,34 @@ from werkzeug.exceptions import (
     NotFound,
     UnsupportedMediaType,
 )
-#from werkzeug.routing import BaseConverter
 
 from .. import db
 from ..models import Ticket
+from ..auth import require_auth
+from ..cache import get_cache
+
+CACHE_TTL = 120
 
 class TicketCollection(Resource):
     """Resource for the collection of tickets for a specific event"""
     def get(self, event):
         """Get a list of all tickets for the given event."""
+        cache = get_cache()
+        cached = cache.get(f"event:{event.id}:tickets")
+        if cached is not None:
+            return cached
+
         response_data = []
-        #tickets = Ticket.query.all()
         tickets = Ticket.query.filter_by(event_id=event.id).all()
         for ticket in tickets:
             response_data.append(ticket.serialize())
+        
+        cache.set(f"event:{event.id}:tickets", response_data, CACHE_TTL)
         return response_data
 
+    @require_auth
     def post(self, event):
         """Create a new ticket for the given event."""
-        #from ..api import api
         if not request.is_json:    
             raise UnsupportedMediaType
         try:
@@ -46,6 +55,9 @@ class TicketCollection(Resource):
             db.session.rollback()
             raise Conflict("Ticket name must be unique per event") from exc 
 
+        cache = get_cache()
+        cache.delete(f"event:{event.id}:tickets")
+
         return Response(
             status=201,
             headers={
@@ -59,8 +71,17 @@ class TicketItem(Resource):
         """Get details of a single ticket."""
         if ticket.event != event:
             raise NotFound
-        return ticket.serialize()
+        
+        cache = get_cache()
+        cached = cache.get(f"ticket:{ticket.id}")
+        if cached is not None:
+            return cached
 
+        serialized = ticket.serialize()
+        cache.set(f"ticket:{ticket.id}", serialized, CACHE_TTL)
+        return serialized
+
+    @require_auth
     def delete(self, event, ticket):
         """Delete a ticket."""
         if ticket.event != event:
@@ -72,6 +93,11 @@ class TicketItem(Resource):
         except IntegrityError as exc:
             db.session.rollback()
             raise Conflict("Cannot delete ticket with existing orders") from exc
+        
+        cache = get_cache()
+        cache.delete(f"ticket:{ticket.id}")
+        cache.delete(f"event:{event.id}:tickets")
+        
         return Response(status=204)
 
 # class TicketConverter(BaseConverter):

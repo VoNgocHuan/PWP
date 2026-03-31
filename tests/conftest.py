@@ -4,6 +4,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from ticketing import create_app, db
+from ticketing.auth import create_token
 
 
 @pytest.fixture(scope="session")
@@ -55,3 +56,15 @@ def db_session(app):
 def client(app):
     """Flask test client."""
     return app.test_client()
+
+@pytest.fixture(scope="function")
+def auth_headers(app, db_session):
+    """Create a test user and return auth headers."""
+    from ticketing.models import User
+    user = User(name="Test User", email="test@example.com")
+    user.set_password("password123")
+    db_session.add(user)
+    db_session.flush()
+    
+    token = create_token(user.id)
+    return {"Authorization": f"Bearer {token}"}

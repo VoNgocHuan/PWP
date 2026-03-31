@@ -3,6 +3,8 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+from .cache import cache
+
 db = SQLAlchemy()
 
 def create_app(test_config=None):
@@ -12,6 +14,9 @@ def create_app(test_config=None):
         SECRET_KEY="dev",
         SQLALCHEMY_DATABASE_URI="sqlite:///" + os.path.join(app.instance_path, "development.db"),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        REDIS_HOST="localhost",
+        REDIS_PORT=6379,
+        REDIS_DB=0,
     )
 
     if test_config is None:
@@ -25,6 +30,7 @@ def create_app(test_config=None):
         pass
 
     db.init_app(app)
+    cache.init_app(app)
 
     from . import api
     from .utils import UserConverter, EventConverter, TicketConverter, OrderConverter

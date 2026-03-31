@@ -7,22 +7,33 @@ from werkzeug.exceptions import BadRequest, Conflict, UnsupportedMediaType
 
 from .. import db
 from ..models import Event
-#from ..utils import validate_json
+from ..auth import require_auth
+from ..cache import get_cache
+
+CACHE_TTL_LIST = 300
+CACHE_TTL_ITEM = 120
 
 class EventCollection(Resource):
     """Resource for the collection of events, accessible at /events."""
     def get(self):
         """Get a list of all events."""
+        cache = get_cache()
+        cached = cache.get("events:all")
+        if cached is not None:
+            return cached
+
         response_data = []
         events = Event.query.all()
         for event in events:
             response_data.append(event.serialize())
+        
+        cache.set("events:all", response_data, CACHE_TTL_LIST)
         return response_data
 
+    @require_auth
     def post(self):
         """Create a new event. 
         The request body must be JSON and conform to the event schema."""
-        #from ..api import api 
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -43,6 +54,9 @@ class EventCollection(Resource):
             db.session.rollback()
             raise Conflict("Invalid event data") from exc
 
+        cache = get_cache()
+        cache.delete("events:all")
+
         return Response(status=201, headers={
             "Location": url_for("api.eventitem", event=event)
         })
@@ -51,8 +65,16 @@ class EventItem(Resource):
     """Resource for a single event, identified by its ID in the URL."""
     def get(self, event):
         """Get details of a single event."""
-        return event.serialize()
+        cache = get_cache()
+        cached = cache.get(f"event:{event.id}")
+        if cached is not None:
+            return cached
 
+        serialized = event.serialize()
+        cache.set(f"event:{event.id}", serialized, CACHE_TTL_ITEM)
+        return serialized
+
+    @require_auth
     def put(self, event):
         """Update an event, 
         but only if there are no existing orders for its tickets."""
@@ -77,8 +99,14 @@ class EventItem(Resource):
         except IntegrityError as exc:
             db.session.rollback()
             raise Conflict("Invalid event data") from exc
+        
+        cache = get_cache()
+        cache.delete(f"event:{event.id}")
+        cache.delete("events:all")
+        
         return Response(status=204)
 
+    @require_auth
     def delete(self, event):
         """Delete an event only if there are no existing orders for its tickets."""
         try:
@@ -87,6 +115,11 @@ class EventItem(Resource):
         except IntegrityError as exc:
             db.session.rollback()
             raise Conflict("Cannot delete event with existing orders") from exc
+        
+        cache = get_cache()
+        cache.delete(f"event:{event.id}")
+        cache.delete("events:all")
+        
         return Response(status=204)
 
 # class EventConverter(BaseConverter):

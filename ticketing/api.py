@@ -1,7 +1,7 @@
 """API for the ticketing system."""
 from flask import Blueprint
 from flask_restful import Api
-from .resources.user import UserCollection, UserItem
+from .resources.user import UserCollection, UserItem, AuthLogin, AuthLogout
 from .resources.event import EventCollection, EventItem
 from .resources.ticket import TicketCollection, TicketItem
 from .resources.order import OrderCollection, OrderItem, UserOrderCollection
@@ -11,6 +11,9 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
 api_bp.add_url_rule("/", "entry", views.entry)
+
+api.add_resource(AuthLogin, "/auth/login/")
+api.add_resource(AuthLogout, "/auth/logout/")
 
 api.add_resource(UserCollection, "/users/")
 api.add_resource(UserItem, "/users/<user:user>/")

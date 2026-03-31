@@ -4,8 +4,9 @@ from decimal import Decimal
 from ticketing import db
 from ticketing.models import User, Event, Ticket
 
-def create_user():
+def create_user(password="password123"):
     user = User(name="John Doe", email="john@example.com")
+    user.set_password(password)
     db.session.add(user)
     db.session.flush()
     return user
