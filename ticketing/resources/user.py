@@ -63,9 +63,8 @@ class UserCollection(Resource):
         cache.set("users:all", response_data, CACHE_TTL)
         return response_data
 
-    @require_auth
     def post(self):
-        """Create a new user."""
+        """Create a new user and return JWT token."""
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -87,12 +86,8 @@ class UserCollection(Resource):
         cache = get_cache()
         cache.delete("users:all")
 
-        return Response(
-            status=201,
-            headers={
-                "Location": url_for("api.useritem", user=user)
-            },
-        )
+        token = create_token(user.id)
+        return {"token": token, "user_id": user.id}, 201
 
 class UserItem(Resource):
     """Resource for a single user"""

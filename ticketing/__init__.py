@@ -32,6 +32,12 @@ def create_app(test_config=None):
     db.init_app(app)
     cache.init_app(app)
 
+    with app.app_context():
+        from . import models
+        db.create_all()
+        from .seed import seed_database
+        seed_database()
+
     from . import api
     from .utils import UserConverter, EventConverter, TicketConverter, OrderConverter
     app.url_map.converters["user"] = UserConverter

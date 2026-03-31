@@ -8,14 +8,16 @@ from tests.helpers import create_user, create_event, create_ticket
 # Tests for the API endpoints of the ticketing application.
 @pytest.mark.usefixtures("db_session")
 class TestUserAPI:
-    def test_create_user(self, client, auth_headers):
+    def test_create_user(self, client):
         response = client.post("/api/users/", json={
             "name": "Alice Wonderland",
             "email": "alice@example.com",
             "password": "password123"
-        }, headers=auth_headers)
+        })
         assert response.status_code == 201
-        assert "Location" in response.headers
+        data = response.get_json()
+        assert "token" in data
+        assert "user_id" in data
 
     def test_get_users(self, client):
         user = create_user()
