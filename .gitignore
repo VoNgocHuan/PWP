@@ -50,3 +50,5 @@ Desktop.ini
 node_modules/
 
 *.log
+
+instance/development.db
