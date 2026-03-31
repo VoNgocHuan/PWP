@@ -37,9 +37,6 @@
 
 ### Action points
 *List here the actions points discussed with assistants*
-
-### Notes
-*Add here notes that you consider important. This is not mandatory*
 - In pyproject, we don't have to list the versions.
 - More details in docstring and class parameters.
 - Remove the requirements.text as we have pyproject.tml
@@ -47,6 +44,10 @@
 - Python libraries for schema checking tools.
 - May use slugify to generate url.
 - Change the order schema after changing the handles.
+- add Caching and Authentication.
+
+### Notes
+*Add here notes that you consider important. This is not mandatory*
 
 ## Meeting 4.
 * **DATE:**
