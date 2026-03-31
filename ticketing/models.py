@@ -289,9 +289,8 @@ class Order(db.Model):
         """JSON schema for order creation."""
         return {
             "type": "object",
-            "required": ["user_id", "ticket_id"],
+            "required": ["ticket_id"],
             "properties": {
-                "user_id": {"type": "integer"},
                 "ticket_id": {"type": "integer"}
             }
         }

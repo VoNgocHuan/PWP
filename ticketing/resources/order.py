@@ -7,6 +7,7 @@ from werkzeug.exceptions import (
     BadRequest,
     Conflict,
     NotFound,
+    Forbidden,
     UnsupportedMediaType,
 )
 
@@ -17,16 +18,16 @@ from ..auth import require_auth
 class OrderCollection(Resource):
     @require_auth
     def get(self):
-        """Get a list of all orders."""
+        """Get a list of orders for the current user."""
         response_data = []
-        orders = Order.query.all()
+        orders = Order.query.filter_by(user_id=g.current_user.id).all()
         for order in orders:
             response_data.append(order.serialize())
         return response_data
 
     @require_auth
     def post(self):
-        """Create a new order."""
+        """Create a new order for the current user."""
         if not request.is_json:
             raise UnsupportedMediaType
 
@@ -35,11 +36,11 @@ class OrderCollection(Resource):
         except ValidationError as e:
             raise BadRequest(str(e)) from e
 
-        user = db.session.get(User, request.json["user_id"])
+        user = g.current_user
         ticket = db.session.get(Ticket, request.json["ticket_id"])
 
-        if user is None or ticket is None:
-            raise NotFound
+        if ticket is None:
+            raise NotFound("Ticket not found")
 
         if ticket.remaining <= 0:
             raise Conflict("Ticket sold out")
@@ -65,12 +66,17 @@ class OrderCollection(Resource):
 class OrderItem(Resource):
     @require_auth
     def get(self, order):
-        """Get details of a single order."""
+        """Get details of a single order (only if own order)."""
+        if order.user_id != g.current_user.id:
+            raise Forbidden("Cannot view other user's order")
         return order.serialize()
 
     @require_auth
     def delete(self, order):
-        """Delete an order."""
+        """Delete an order (only if own order)."""
+        if order.user_id != g.current_user.id:
+            raise Forbidden("Cannot delete other user's order")
+        
         ticket = order.ticket
         ticket.remaining += 1
         try:
@@ -84,7 +90,10 @@ class OrderItem(Resource):
 class UserOrderCollection(Resource):
     @require_auth
     def get(self, user):
-        """Get a list of all orders for a specific user."""
+        """Get a list of all orders for a specific user (only if own)."""
+        if user.id != g.current_user.id:
+            raise Forbidden("Cannot view other user's orders")
+        
         response_data = []
         orders = Order.query.filter_by(user_id=user.id).all()
         for order in orders:
