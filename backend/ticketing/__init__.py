@@ -1,5 +1,6 @@
 """Initialization of the ticketing application."""
 import os
+import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -7,6 +8,13 @@ from flask_cors import CORS
 from .cache import cache
 
 db = SQLAlchemy()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger("ticketing")
 
 def create_app(test_config=None):
     """Create and configure the Flask application."""

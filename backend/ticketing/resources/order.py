@@ -1,4 +1,5 @@
 """Resources for managing orders in the ticketing application."""
+import logging
 from flask import request, Response, url_for, g
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
@@ -15,6 +16,8 @@ from .. import db
 from ..models import Order, User, Ticket
 from ..auth import require_auth
 from ..cache import get_cache
+
+logger = logging.getLogger("ticketing")
 
 class OrderCollection(Resource):
     @require_auth
@@ -57,9 +60,13 @@ class OrderCollection(Resource):
             cache = get_cache()
             cache.delete("events:all")
             cache.delete(f"event:{ticket.event_id}")
+            cache.invalidate_pattern("event:*")
+            
+            logger.info(f"Order created: user_id={user.id}, ticket_id={ticket.id}, remaining={ticket.remaining}")
             
         except IntegrityError as exc:
             db.session.rollback()
+            logger.error(f"Order creation failed: user_id={user.id}, ticket_id={ticket.id}, error={exc}")
             raise Conflict("Could not create order") from exc
 
         return {"message": "Order created successfully", "order_id": order.id}, 201

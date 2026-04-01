@@ -188,7 +188,7 @@ async function loadMyTickets() {
     });
 
     if (!response.ok) {
-        document.getElementById("my-tickets").innerHTML = "<p>Could not load tickets.</p>";
+        document.getElementById("my-tickets").innerHTML = `<p>Could not load tickets. Status: ${response.status}</p>`;
         return;
     }
 

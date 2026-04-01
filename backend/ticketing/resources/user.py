@@ -1,4 +1,5 @@
 """Resources for managing users in the ticketing application."""
+import logging
 from flask import request, Response, url_for, g
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
@@ -15,6 +16,8 @@ from ..models import User
 from ..auth import create_token, require_auth
 from ..cache import get_cache
 
+logger = logging.getLogger("ticketing")
+
 CACHE_TTL = 300
 
 class AuthLogin(Resource):
@@ -29,12 +32,15 @@ class AuthLogin(Resource):
 
         user = User.query.filter_by(email=data["email"]).first()
         if user is None or not user.check_password(data["password"]):
+            logger.warning(f"Failed login attempt for email: {data['email']}")
             raise Unauthorized("Invalid email or password")
 
         if user.status == "disabled":
+            logger.warning(f"Login attempt for disabled user: {data['email']}")
             raise Unauthorized("User account is disabled")
 
         token = create_token(user.id)
+        logger.info(f"User logged in: user_id={user.id}, email={user.email}")
         return {"token": token, "user_id": user.id}, 200
 
 class AuthLogout(Resource):
