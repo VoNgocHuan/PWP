@@ -14,6 +14,7 @@ from werkzeug.exceptions import (
 from .. import db
 from ..models import Order, User, Ticket
 from ..auth import require_auth
+from ..cache import get_cache
 
 class OrderCollection(Resource):
     @require_auth
@@ -52,16 +53,16 @@ class OrderCollection(Resource):
         try:
             db.session.add(order)
             db.session.commit()
+            
+            cache = get_cache()
+            cache.delete("events:all")
+            cache.delete(f"event:{ticket.event_id}")
+            
         except IntegrityError as exc:
             db.session.rollback()
             raise Conflict("Could not create order") from exc
 
-        return Response(
-            status=201,
-            headers={
-                "Location": url_for("api.orderitem", order=order)
-            }
-        )
+        return {"message": "Order created successfully", "order_id": order.id}, 201
 
 class OrderItem(Resource):
     @require_auth

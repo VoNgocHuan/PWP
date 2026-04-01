@@ -3,18 +3,20 @@ import click
 from datetime import datetime
 from sqlalchemy.engine import Engine
 from flask.cli import with_appcontext
-from sqlalchemy import event
+from sqlalchemy import event, text
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from . import db
 
-@event.listens_for(Engine, "connect")
-def set_sqlite_pragma(dbapi_connection, connection_record):
-    """Enable foreign key constraints in SQLite,
-     which are disabled by default."""
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
+def _setup_db_connection(dbapi_connection, connection_record):
+    """Enable foreign key constraints. For SQLite only."""
+    dialect = dbapi_connection.dialect.name if hasattr(dbapi_connection, 'dialect') else ''
+    if dialect == 'sqlite':
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+event.listens_for(Engine, "connect")(_setup_db_connection)
 
 class User(db.Model):
     """Users represent a person who can purchase tickets."""

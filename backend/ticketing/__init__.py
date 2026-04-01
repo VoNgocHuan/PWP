@@ -2,6 +2,7 @@
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 
 from .cache import cache
 
@@ -9,26 +10,16 @@ db = SQLAlchemy()
 
 def create_app(test_config=None):
     """Create and configure the Flask application."""
-    app = Flask(__name__, instance_relative_config=True)
-    app.config.from_mapping(
-        SECRET_KEY="dev",
-        SQLALCHEMY_DATABASE_URI="sqlite:///" + os.path.join(app.instance_path, "development.db"),
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        REDIS_HOST="localhost",
-        REDIS_PORT=6379,
-        REDIS_DB=0,
-    )
-
+    app = Flask(__name__)
+    
+    env = os.environ.get("FLASK_ENV", "development")
     if test_config is None:
-        app.config.from_pyfile("config.py", silent=True)
+        import config
+        app.config.from_object(config.config.get(env, config.config["default"]))
     else:
         app.config.from_mapping(test_config)
 
-    try:
-        os.makedirs(app.instance_path, exist_ok=True)
-    except OSError:
-        pass
-
+    CORS(app)
     db.init_app(app)
     cache.init_app(app)
 

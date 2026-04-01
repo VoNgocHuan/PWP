@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticketing System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #c5c3c4;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.3rem;
+            color: #333;
+        }
+
+        header img {
+            height: 50px;
+        }
+
+        nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+
+        nav button:hover {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        nav button.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .auth-section, .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-section {
+            display: none;
+        }
+
+        .auth-section input {
+            padding: 0.4rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .auth-section button, .user-section button {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            margin-left: 0;
+        }
+
+        .auth-section button:hover, .user-section button:hover {
+            background-color: #0056b3;
+        }
+
+        #logout-btn {
+            background-color: #dc3545;
+        }
+
+        #logout-btn:hover {
+            background-color: #c82333;
+        }
+
+        h1, h2 {
+            text-align: left;
+            margin: 1rem 0;
+            padding: 1rem;
+        }
+
+        .section {
+            display: none;
+            padding: 0 1rem;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .event {
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .event-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .event-info {
+            margin-bottom: 0.75rem;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .ticket-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .ticket-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 6px;
+            width: 180px;
+            background-color: #f9f9f9;
+        }
+
+        .ticket-box button {
+            margin-top: 6px;
+            margin-left: 0;
+        }
+
+        button {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="number"] {
+            width: 50px;
+            margin-right: 0.5rem;
+            padding: 0.3rem;
+        }
+
+        .message {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: bold;
+            padding: 1rem;
+        }
+
+        .message.error {
+            color: #dc3545;
+        }
+
+        .ticket-item {
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin: 0; font-size: 1.5rem;">Ticketing System</h1>
+    
+    <nav id="nav-section" style="display: none;">
+        <button id="nav-events" class="active">Events</button>
+        <button id="nav-tickets">My Tickets</button>
+    </nav>
+
+    <div id="auth-section">
+        <form id="login-form" class="auth-section">
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="user-section" class="user-section">
+        <span id="user-greeting"></span>
+        <button id="logout-btn">Logout</button>
+    </div>
+</header>
+
+<div id="events-section" class="section active">
+    <h1>Available Events</h1>
+    <div id="events"></div>
+</div>
+
+<div id="my-tickets-section" class="section">
+    <h1>My Tickets</h1>
+    <div id="my-tickets"></div>
+</div>
+
+<div id="message" class="message"></div>
+
+<script src="app.js"></script>
+
+</body>
+</html>

@@ -25,7 +25,11 @@ class EventCollection(Resource):
         response_data = []
         events = Event.query.all()
         for event in events:
-            response_data.append(event.serialize())
+            serialized = event.serialize()
+            from ..models import Ticket
+            tickets = Ticket.query.filter_by(event_id=event.id).all()
+            serialized["tickets"] = [t.serialize() for t in tickets]
+            response_data.append(serialized)
         
         cache.set("events:all", response_data, CACHE_TTL_LIST)
         return response_data
@@ -71,6 +75,9 @@ class EventItem(Resource):
             return cached
 
         serialized = event.serialize()
+        from ..models import Ticket
+        tickets = Ticket.query.filter_by(event_id=event.id).all()
+        serialized["tickets"] = [t.serialize() for t in tickets]
         cache.set(f"event:{event.id}", serialized, CACHE_TTL_ITEM)
         return serialized
 
