@@ -262,6 +262,17 @@ async function login(email, password) {
 }
 
 async function logout() {
+    const token = getToken();
+    if (token) {
+        try {
+            await fetch(`${API_BASE}/auth/logout/`, {
+                method: "POST",
+                headers: getAuthHeaders()
+            });
+        } catch (e) {
+            console.warn("Logout API call failed:", e);
+        }
+    }
     clearAuth();
     updateAuthUI();
     document.getElementById("events").innerHTML = "";

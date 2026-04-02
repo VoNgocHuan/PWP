@@ -170,3 +170,28 @@ app.config["REDIS_HOST"] = "your-redis-host"
 app.config["REDIS_PORT"] = 6379
 app.config["REDIS_DB"] = 0
 ```
+
+## Frontend (Branch: Frontend)
+
+### Changes Made
+
+| Date | Change | Description |
+|------|--------|-------------|
+| 2026-04-02 | Login/Logout with JWT | Implemented login form that calls `/api/auth/login/` and stores JWT token in localStorage. Logout calls `/api/auth/logout/` to blacklist the token server-side. |
+| 2026-04-02 | JWT Token Storage | JWT token, user_id, and user_name are stored in localStorage using helper functions: `setAuth()`, `getToken()`, `clearAuth()` |
+| 2026-04-02 | Using JWT Token | All authenticated requests use `getAuthHeaders()` which includes `Authorization: Bearer {token}` header |
+| 2026-04-02 | View My Orders | Users can view their purchased tickets via "My Tickets" navigation which calls `/api/users/{user_id}/orders/` |
+
+### Frontend Files
+
+- `frontend/index.html` - Main HTML with login form, events list, and my tickets view
+- `frontend/app.js` - JavaScript handling API calls, authentication, and UI updates
+
+### Frontend Features
+
+- Login/Logout with JWT authentication
+- View all available events
+- Purchase tickets (requires login)
+- View purchased tickets ("My Tickets")
+- Token is automatically included in all authenticated API calls
+- Logout blacklists token on server-side
