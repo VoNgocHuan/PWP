@@ -1,4 +1,5 @@
 """Authentication utilities for the ticketing application."""
+import time
 import jwt
 from functools import wraps
 from flask import request, g, current_app
@@ -12,7 +13,8 @@ blacklist = set()
 def create_token(user_id):
     """Create a JWT token for a user."""
     payload = {
-        "user_id": user_id
+        "user_id": user_id,
+        "iat": int(time.time())
     }
     return jwt.encode(payload, current_app.config["SECRET_KEY"], algorithm="HS256")
 
