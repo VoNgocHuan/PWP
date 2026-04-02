@@ -175,13 +175,13 @@ app.config["REDIS_DB"] = 0
 
 ### Changes Made
 
-| Date | Change | Description |
-|------|--------|-------------|
-| 2026-04-02 | Login/Logout with JWT | Implemented login form that calls `/api/auth/login/` and stores JWT token in localStorage. Logout calls `/api/auth/logout/` to blacklist the token server-side. |
-| 2026-04-02 | JWT Token Storage | JWT token, user_id, and user_name are stored in localStorage using helper functions: `setAuth()`, `getToken()`, `clearAuth()` |
-| 2026-04-02 | Using JWT Token | All authenticated requests use `getAuthHeaders()` which includes `Authorization: Bearer {token}` header |
-| 2026-04-02 | View My Orders | Users can view their purchased tickets via "My Tickets" navigation which calls `/api/users/{user_id}/orders/` |
-| 2026-04-02 | Token Uniqueness Fix | Added timestamp (`iat`) to JWT payload in backend to ensure each login generates a unique token. This fixes the bug where re-login after logout would fail because the same token was being blacklisted and reissued. |
+| Change | Description |
+|--------|-------------|
+| Login/Logout with JWT | Implemented login form that calls `/api/auth/login/` and stores JWT token in localStorage. Logout calls `/api/auth/logout/` to blacklist the token server-side. |
+| JWT Token Storage | JWT token, user_id, and user_name are stored in localStorage using helper functions: `setAuth()`, `getToken()`, `clearAuth()` |
+| Using JWT Token | All authenticated requests use `getAuthHeaders()` which includes `Authorization: Bearer {token}` header |
+| View My Orders | Users can view their purchased tickets via "My Tickets" navigation which calls `/api/users/{user_id}/orders/` |
+| Token Uniqueness Fix | Added timestamp (`iat`) to JWT payload in backend to ensure each login generates a unique token. This fixes the bug where re-login after logout would fail because the same token was being blacklisted and reissued. |
 
 ### Frontend Files
 
