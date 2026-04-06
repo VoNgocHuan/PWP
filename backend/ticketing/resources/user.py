@@ -1,47 +1,47 @@
 """Resources for managing users in the ticketing application."""
+import json
 import logging
 from flask import request, Response, url_for, g
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
-from werkzeug.exceptions import (
-    BadRequest,
-    Conflict,
-    UnsupportedMediaType,
-    Unauthorized,
-)
 
 from .. import db
 from ..models import User
 from ..auth import create_token, require_auth
 from ..cache import get_cache
+from ..utils import MasonBuilder, LINK_RELATIONS_URL, create_error_response, MASON
 
 logger = logging.getLogger("ticketing")
 
 CACHE_TTL = 300
 
+
 class AuthLogin(Resource):
     def post(self):
         """Login user and return JWT token."""
         if not request.is_json:
-            raise UnsupportedMediaType
+            return create_error_response(415, "Unsupported media type", "Use JSON")
 
         data = request.json
         if not data or "email" not in data or "password" not in data:
-            raise BadRequest("Email and password are required")
+            return create_error_response(400, "Bad Request", "Email and password are required")
 
         user = User.query.filter_by(email=data["email"]).first()
         if user is None or not user.check_password(data["password"]):
             logger.warning(f"Failed login attempt for email: {data['email']}")
-            raise Unauthorized("Invalid email or password")
+            return create_error_response(401, "Unauthorized", "Invalid email or password")
 
         if user.status == "disabled":
             logger.warning(f"Login attempt for disabled user: {data['email']}")
-            raise Unauthorized("User account is disabled")
+            return create_error_response(401, "Unauthorized", "User account is disabled")
 
         token = create_token(user.id)
         logger.info(f"User logged in: user_id={user.id}, email={user.email}")
-        return {"token": token, "user_id": user.id}, 200
+        
+        body = MasonBuilder(token=token, user_id=user.id)
+        return Response(json.dumps(body), 200, mimetype=MASON)
+
 
 class AuthLogout(Resource):
     @require_auth
@@ -51,7 +51,10 @@ class AuthLogout(Resource):
         auth_header = request.headers.get("Authorization")
         token = auth_header.split(" ")[1]
         blacklist.add(token)
-        return {"message": "Logged out successfully"}, 200
+        
+        body = MasonBuilder(message="Logged out successfully")
+        return Response(json.dumps(body), 200, mimetype=MASON)
+
 
 class UserCollection(Resource):
     def get(self):
@@ -59,25 +62,38 @@ class UserCollection(Resource):
         cache = get_cache()
         cached = cache.get("users:all")
         if cached is not None:
-            return cached
+            return Response(json.dumps(cached), 200, mimetype=MASON)
 
-        response_data = []
+        body = MasonBuilder(items=[])
+        body.add_namespace("ticketing", LINK_RELATIONS_URL)
+        
         users = User.query.all()
         for user in users:
-            response_data.append(user.serialize())
+            item = MasonBuilder(**user.serialize())
+            item.add_control("self", url_for("api.useritem", user=user))
+            item.add_control("profile", "/api/profiles/user/")
+            body["items"].append(item)
         
-        cache.set("users:all", response_data, CACHE_TTL)
-        return response_data
+        body.add_control("self", url_for("api.usercollection"))
+        body.add_control_post(
+            "ticketing:add-user",
+            "Register new user",
+            url_for("api.usercollection"),
+            User.json_schema()
+        )
+        
+        cache.set("users:all", dict(body), CACHE_TTL)
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     def post(self):
         """Create a new user and return JWT token."""
         if not request.is_json:
-            raise UnsupportedMediaType
+            return create_error_response(415, "Unsupported media type", "Use JSON")
 
         try:
             validate(request.json, User.json_schema())
         except ValidationError as e:
-            raise BadRequest(str(e)) from e
+            return create_error_response(400, "Invalid JSON document", str(e))
 
         user = User()
         user.deserialize(request.json)
@@ -87,13 +103,15 @@ class UserCollection(Resource):
             db.session.commit()
         except IntegrityError as exc:
             db.session.rollback()
-            raise Conflict("Email already exists") from exc
+            return create_error_response(409, "Conflict", "Email already exists")
 
         cache = get_cache()
         cache.delete("users:all")
 
         token = create_token(user.id)
-        return {"token": token, "user_id": user.id}, 201
+        body = MasonBuilder(token=token, user_id=user.id)
+        return Response(json.dumps(body), 201, mimetype=MASON)
+
 
 class UserItem(Resource):
     """Resource for a single user"""
@@ -102,23 +120,41 @@ class UserItem(Resource):
         cache = get_cache()
         cached = cache.get(f"user:{user.id}")
         if cached is not None:
-            return cached
+            return Response(json.dumps(cached), 200, mimetype=MASON)
 
-        serialized = user.serialize()
-        cache.set(f"user:{user.id}", serialized, CACHE_TTL)
-        return serialized
+        body = MasonBuilder(**user.serialize())
+        body.add_namespace("ticketing", LINK_RELATIONS_URL)
+        body.add_control("self", url_for("api.useritem", user=user))
+        body.add_control("collection", url_for("api.usercollection"))
+        body.add_control("profile", "/api/profiles/user/")
+        body.add_control("ticketing:orders", url_for("api.userordercollection", user=user))
+        
+        body.add_control_put(
+            "edit",
+            "Edit this user",
+            url_for("api.useritem", user=user),
+            User.json_schema()
+        )
+        
+        body.add_control_delete(
+            "ticketing:delete",
+            "Delete this user",
+            url_for("api.useritem", user=user)
+        )
+        
+        cache.set(f"user:{user.id}", dict(body), CACHE_TTL)
+        return Response(json.dumps(body), 200, mimetype=MASON)
 
     @require_auth
     def put(self, user):
-        """Update a user's information. 
-        The request body must be JSON and conform to the user schema."""
+        """Update a user's information."""
         if not request.is_json:
-            raise UnsupportedMediaType
+            return create_error_response(415, "Unsupported media type", "Use JSON")
 
         try:
             validate(request.json, User.json_schema())
         except ValidationError as e:
-            raise BadRequest(str(e)) from e
+            return create_error_response(400, "Invalid JSON document", str(e))
 
         user.deserialize(request.json)
 
@@ -126,7 +162,7 @@ class UserItem(Resource):
             db.session.commit()
         except IntegrityError as exc:
             db.session.rollback()
-            raise Conflict("Email already exists") from exc
+            return create_error_response(409, "Conflict", "Email already exists")
 
         cache = get_cache()
         cache.delete(f"user:{user.id}")
@@ -145,18 +181,3 @@ class UserItem(Resource):
         cache.delete("users:all")
         
         return Response(status=204)
-
-# class UserConverter(BaseConverter):
-#     """URL converter for User resources."""
-#     def to_python(self, value):
-#         """Convert a URL component (user ID) to a User object."""
-#         user = db.session.get(User, value)
-#         if user is None:
-#             raise NotFound
-#         return user
-
-#     def to_url(self, value):
-#         """Convert a User object to a URL component (its ID)."""
-#         return str(value.id)
-
-# app.url_map.converters["user"] = UserConverter

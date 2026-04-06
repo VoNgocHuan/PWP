@@ -11,6 +11,12 @@ api_bp = Blueprint("api", __name__, url_prefix="/api")
 api = Api(api_bp)
 
 api_bp.add_url_rule("/", "entry", views.entry)
+api_bp.add_url_rule("/link-relations/", "link_relations", views.link_relations)
+api_bp.add_url_rule("/profiles/user/", "profile_user", views.profile_user)
+api_bp.add_url_rule("/profiles/event/", "profile_event", views.profile_event)
+api_bp.add_url_rule("/profiles/ticket/", "profile_ticket", views.profile_ticket)
+api_bp.add_url_rule("/profiles/order/", "profile_order", views.profile_order)
+api_bp.add_url_rule("/profiles/error-profile/", "profile_error", views.profile_error)
 
 api.add_resource(AuthLogin, "/auth/login/")
 api.add_resource(AuthLogout, "/auth/logout/")

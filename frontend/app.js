@@ -67,7 +67,8 @@ async function loadEvents() {
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        events = await response.json();
+        const data = await response.json();
+        events = data.items || [];
     } catch (e) {
         console.error("Failed to load events:", e);
         document.getElementById("events").innerHTML = `<p>Error loading events: ${e.message}</p>`;
@@ -192,7 +193,8 @@ async function loadMyTickets() {
         return;
     }
 
-    const orders = await response.json();
+    const ordersData = await response.json();
+    const orders = ordersData.items || [];
     const container = document.getElementById("my-tickets");
     container.innerHTML = "";
 
@@ -207,7 +209,8 @@ async function loadMyTickets() {
 
         try {
             const ticketResp = await fetch(`${API_BASE}/events/`);
-            const events = await ticketResp.json();
+            const eventsData = await ticketResp.json();
+            const events = eventsData.items || [];
             
             for (const event of events) {
                 if (event.tickets) {
