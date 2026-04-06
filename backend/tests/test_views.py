@@ -1,17 +1,16 @@
 # tests/test_views.py
 import pytest
+import json
 from ticketing.views import entry
 
 def test_entry_view(client):
-    """Test the API entry point returns expected structure."""
-    response = client.get("/api/")  # <-- use /api/ instead of /
+    """Test the API entry point returns expected Mason format."""
+    response = client.get("/api/")
     assert response.status_code == 200
-
-    data = response.get_json()
-    assert data["api_name"] == "ticketing"
-    assert data["api_version"] == "1.0"
-    assert "users" in data["collections"]
-    assert "events" in data["collections"]
-    assert "orders" in data["collections"]
-    assert data["collections"]["users"] == "/api/users/"
     
+    data = json.loads(response.data)
+    assert "@controls" in data
+    assert "ticketing:users-all" in data["@controls"]
+    assert "ticketing:events-all" in data["@controls"]
+    assert "ticketing:orders" in data["@controls"]
+    assert "ticketing:login" in data["@controls"]

@@ -1,11 +1,19 @@
 # tests/helpers.py
+import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
 from ticketing import db
 from ticketing.models import User, Event, Ticket
 
+_counter = 0
+
+def _get_unique_email():
+    global _counter
+    _counter += 1
+    return f"test_{uuid.uuid4().hex[:8]}_{_counter}@example.com"
+
 def create_user(password="password123"):
-    user = User(name="John Doe", email="john@example.com")
+    user = User(name="John Doe", email=_get_unique_email())
     user.set_password(password)
     db.session.add(user)
     db.session.flush()

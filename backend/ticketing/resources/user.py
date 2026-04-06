@@ -70,6 +70,7 @@ class AuthLogout(Resource):
     @require_auth
     def post(self):
         """Logout user by revoking token."""
+        return {"message": "Logged out"}, 200
 
 
 class UserCollection(Resource):
