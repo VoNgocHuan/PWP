@@ -27,6 +27,7 @@ Testing:
 
 All Python dependencies are encoded in:
 - `requirements.txt`
+- `pyproject.toml`
 
 ## Database
 
@@ -37,12 +38,19 @@ DB located in:
 - `instance/development.db`
 
 ## Instructions
-### Installing deps:
+### Installing deps (pick one of 2):
+### a/ install from requirement:
 pip install -r requirements.txt
 
+### b/ plan for change from requirement.txt to pyproject/toml:
+###    Delete requirements.txt (just for there to be no conflicts)
+Run pip install -e .
+
+### run the app 
 You can start the app by pasting this command in the venv:
 flask --app=ticketing --debug run
 
+### populate db
 The populated DB exists in the /instace folder as 'developments.db' in addition to the sql dump.
 
 ### How to run tests

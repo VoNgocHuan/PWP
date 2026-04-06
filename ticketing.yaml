@@ -1,0 +1,1420 @@
+openapi: 3.0.4
+info:
+  title: Ticketing API
+  description: API for managing users, events, tickets, and orders
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Main API server
+
+paths:
+  /:
+    get:
+      summary: API entry point
+      operationId: getEntry
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ticketing API v1.0.0"
+
+  /users/:
+    get:
+      summary: Get all users
+      operationId: getUsers
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              example:
+                - id: 1
+                  name: "John Doe"
+                  email: "john@example.com"
+                  status: "active"
+                  created_at: "2024-01-15T10:30:00Z"
+                - id: 2
+                  name: "Jane Smith"
+                  email: "jane@example.com"
+                  status: "active"
+                  created_at: "2024-01-16T14:20:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal Server Error"
+                message: "An unexpected error occurred"
+    post:
+      summary: Create a new user
+      operationId: createUser
+      tags:
+        - Users
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            example:
+              name: "John Doe"
+              email: "john@example.com"
+              status: "active"
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: 1
+                name: "John Doe"
+                email: "john@example.com"
+                status: "active"
+                created_at: "2024-01-15T10:30:00Z"
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created user
+              example: "/api/users/1"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Email already exists"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+
+  /users/{user_id}:
+    get:
+      summary: Get a user by ID
+      operationId: getUser
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/user_id'
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: 1
+                name: "John Doe"
+                email: "john@example.com"
+                status: "active"
+                created_at: "2024-01-15T10:30:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "User not found"
+    put:
+      summary: Update a user
+      operationId: updateUser
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/user_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            example:
+              name: "John Doe Updated"
+              email: "john.updated@example.com"
+              status: "active"
+      responses:
+        '204':
+          description: User updated
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "User not found"
+        '409':
+          description: Email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Email already exists"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+    delete:
+      summary: Delete a user
+      operationId: deleteUser
+      tags:
+        - Users
+      parameters:
+        - $ref: '#/components/parameters/user_id'
+      responses:
+        '204':
+          description: User deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "User not found"
+
+  /users/{user_id}/orders:
+    get:
+      summary: Get all orders for a user
+      operationId: getUserOrders
+      tags:
+        - Users
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/user_id'
+      responses:
+        '200':
+          description: List of user's orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+              example:
+                - id: 1
+                  user_id: 1
+                  ticket_id: 5
+                  status: "not_used"
+                  created_at: "2024-01-20T12:00:00Z"
+                - id: 2
+                  user_id: 1
+                  ticket_id: 8
+                  status: "used"
+                  created_at: "2024-01-21T09:15:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "User not found"
+
+  /events/:
+    get:
+      summary: Get all events
+      operationId: getEvents
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: List of all events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+              example:
+                - id: 1
+                  title: "Concert Night"
+                  venue: "Arena Stadium"
+                  city: "New York"
+                  description: "An amazing live concert"
+                  starts_at: "2024-06-15T19:00:00Z"
+                  ends_at: "2024-06-15T23:00:00Z"
+                  status: "active"
+                - id: 2
+                  title: "Tech Conference"
+                  venue: "Convention Center"
+                  city: "San Francisco"
+                  description: "Annual tech conference"
+                  starts_at: "2024-07-20T09:00:00Z"
+                  ends_at: "2024-07-22T18:00:00Z"
+                  status: "active"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal Server Error"
+                message: "An unexpected error occurred"
+    post:
+      summary: Create a new event
+      operationId: createEvent
+      tags:
+        - Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+            example:
+              title: "New Concert"
+              venue: "Stadium Arena"
+              city: "Los Angeles"
+              description: "A grand musical event"
+              starts_at: "2024-08-01T20:00:00Z"
+              ends_at: "2024-08-01T23:30:00Z"
+              status: "active"
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              example:
+                id: 3
+                title: "New Concert"
+                venue: "Stadium Arena"
+                city: "Los Angeles"
+                description: "A grand musical event"
+                starts_at: "2024-08-01T20:00:00Z"
+                ends_at: "2024-08-01T23:30:00Z"
+                status: "active"
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created event
+              example: "/api/events/3"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+
+  /events/{event_id}:
+    get:
+      summary: Get an event by ID
+      operationId: getEvent
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+      responses:
+        '200':
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              example:
+                id: 1
+                title: "Concert Night"
+                venue: "Arena Stadium"
+                city: "New York"
+                description: "An amazing live concert"
+                starts_at: "2024-06-15T19:00:00Z"
+                ends_at: "2024-06-15T23:00:00Z"
+                status: "active"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Event not found"
+    put:
+      summary: Update an event
+      operationId: updateEvent
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+            example:
+              title: "Updated Concert Night"
+              venue: "New Arena"
+              city: "Chicago"
+              description: "Updated event description"
+              starts_at: "2024-06-20T20:00:00Z"
+              ends_at: "2024-06-20T23:00:00Z"
+              status: "active"
+      responses:
+        '204':
+          description: Event updated
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Event not found"
+        '409':
+          description: Cannot update event with existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Cannot update event with existing orders"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+    delete:
+      summary: Delete an event
+      operationId: deleteEvent
+      tags:
+        - Events
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+      responses:
+        '204':
+          description: Event deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Event not found"
+        '409':
+          description: Cannot delete event with existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Cannot delete event with existing orders"
+
+  /events/{event_id}/tickets/:
+    get:
+      summary: Get all tickets for an event
+      operationId: getEventTickets
+      tags:
+        - Events
+        - Tickets
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+      responses:
+        '200':
+          description: List of tickets for the event
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+              example:
+                - id: 1
+                  name: "VIP"
+                  price: 150.00
+                  capacity: 100
+                  remaining: 50
+                - id: 2
+                  name: "General Admission"
+                  price: 50.00
+                  capacity: 500
+                  remaining: 200
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Event not found"
+    post:
+      summary: Create a ticket for an event
+      operationId: createTicket
+      tags:
+        - Events
+        - Tickets
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+            example:
+              name: "Early Bird"
+              price: 75.00
+              capacity: 200
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+              example:
+                id: 3
+                name: "Early Bird"
+                price: 75.00
+                capacity: 200
+                remaining: 200
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created ticket
+              example: "/api/events/1/tickets/3"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Event not found"
+        '409':
+          description: Ticket name must be unique per event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Ticket name must be unique per event"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+
+  /events/{event_id}/tickets/{ticket_id}:
+    get:
+      summary: Get a ticket by ID
+      operationId: getTicket
+      tags:
+        - Tickets
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+        - $ref: '#/components/parameters/ticket_id'
+      responses:
+        '200':
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+              example:
+                id: 1
+                name: "VIP"
+                price: 150.00
+                capacity: 100
+                remaining: 50
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Ticket or event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Ticket or event not found"
+    put:
+      summary: Update a ticket
+      operationId: updateTicket
+      tags:
+        - Tickets
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+        - $ref: '#/components/parameters/ticket_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreate'
+            example:
+              name: "VIP Updated"
+              price: 175.00
+              capacity: 150
+      responses:
+        '204':
+          description: Ticket updated
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Ticket or event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Ticket or event not found"
+        '409':
+          description: Cannot update ticket with existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Cannot update ticket with existing orders"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+    delete:
+      summary: Delete a ticket
+      operationId: deleteTicket
+      tags:
+        - Tickets
+      parameters:
+        - $ref: '#/components/parameters/event_id'
+        - $ref: '#/components/parameters/ticket_id'
+      responses:
+        '204':
+          description: Ticket deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Ticket or event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Ticket or event not found"
+        '409':
+          description: Cannot delete ticket with existing orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Cannot delete ticket with existing orders"
+
+  /orders/:
+    get:
+      summary: Get all orders
+      operationId: getOrders
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: List of all orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+              example:
+                - id: 1
+                  user_id: 1
+                  ticket_id: 5
+                  status: "not_used"
+                  created_at: "2024-01-20T12:00:00Z"
+                - id: 2
+                  user_id: 2
+                  ticket_id: 8
+                  status: "used"
+                  created_at: "2024-01-21T09:15:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Internal Server Error"
+                message: "An unexpected error occurred"
+    post:
+      summary: Create a new order
+      operationId: createOrder
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+            example:
+              user_id: 1
+              ticket_id: 5
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                id: 3
+                user_id: 1
+                ticket_id: 5
+                status: "not_used"
+                created_at: "2024-01-25T15:30:00Z"
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL of the created order
+              example: "/api/orders/3"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: User or ticket not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "User or ticket not found"
+        '409':
+          description: Ticket sold out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Ticket sold out"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+
+  /orders/{order_id}:
+    get:
+      summary: Get an order by ID
+      operationId: getOrder
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/order_id'
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              example:
+                id: 1
+                user_id: 1
+                ticket_id: 5
+                status: "not_used"
+                created_at: "2024-01-20T12:00:00Z"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Order not found"
+    put:
+      summary: Update an order
+      operationId: updateOrder
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/order_id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdate'
+            example:
+              status: "used"
+      responses:
+        '204':
+          description: Order updated
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Bad Request"
+                message: "Invalid request body"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Order not found"
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unprocessable Entity"
+                message: "Validation failed"
+    delete:
+      summary: Delete an order
+      operationId: deleteOrder
+      tags:
+        - Orders
+      parameters:
+        - $ref: '#/components/parameters/order_id'
+      responses:
+        '204':
+          description: Order deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+        '404':
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Not Found"
+                message: "Order not found"
+        '409':
+          description: Could not delete order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Conflict"
+                message: "Could not delete order"
+
+components:
+  parameters:
+    user_id:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: The unique identifier of the user
+      example: 1
+    event_id:
+      name: event_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: The unique identifier of the event
+      example: 1
+    ticket_id:
+      name: ticket_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: The unique identifier of the ticket
+      example: 1
+    order_id:
+      name: order_id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: The unique identifier of the order
+      example: 1
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 50
+        minimum: 1
+        maximum: 100
+      description: Maximum number of results to return
+      example: 50
+    offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      description: Number of results to skip before returning results
+      example: 0
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Detailed error message
+          example: "Invalid request body"
+
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - email
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          maxLength: 120
+          minLength: 1
+          pattern: "^[A-Za-z]+\\s[A-Za-z]+.*$"
+          description: "Full name in format Firstname Lastname"
+          example: "John Doe"
+        email:
+          type: string
+          maxLength: 250
+          format: email
+          example: "john@example.com"
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+          default: active
+          example: "active"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-01-15T10:30:00Z"
+
+    UserCreate:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          description: Must contain first name and last name
+          example: "John Doe"
+        email:
+          type: string
+          example: "john@example.com"
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+          default: active
+          example: "active"
+
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          example: 1
+        title:
+          type: string
+          example: "Concert Night"
+        venue:
+          type: string
+          example: "Arena Stadium"
+        city:
+          type: string
+          example: "New York"
+        description:
+          type: string
+          example: "An amazing live concert"
+        starts_at:
+          type: string
+          format: date-time
+          example: "2024-06-15T19:00:00Z"
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-06-15T23:00:00Z"
+        status:
+          type: string
+          enum:
+            - active
+            - cancelled
+          example: "active"
+
+    EventCreate:
+      type: object
+      required:
+        - title
+        - venue
+        - city
+        - starts_at
+      properties:
+        title:
+          type: string
+          example: "Concert Night"
+        venue:
+          type: string
+          example: "Arena Stadium"
+        city:
+          type: string
+          example: "New York"
+        description:
+          type: string
+          example: "An amazing live concert"
+        starts_at:
+          type: string
+          format: date-time
+          example: "2024-06-15T19:00:00Z"
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-06-15T23:00:00Z"
+        status:
+          type: string
+          enum:
+            - active
+            - cancelled
+          default: active
+          example: "active"
+
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          example: 1
+        name:
+          type: string
+          example: "VIP"
+        price:
+          type: number
+          example: 150.00
+        capacity:
+          type: integer
+          example: 100
+        remaining:
+          type: integer
+          example: 50
+
+    TicketCreate:
+      type: object
+      required:
+        - name
+        - price
+        - capacity
+      properties:
+        name:
+          type: string
+          example: "VIP"
+        price:
+          type: number
+          minimum: 0
+          example: 150.00
+        capacity:
+          type: integer
+          minimum: 0
+          example: 100
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          example: 1
+        user_id:
+          type: integer
+          example: 1
+        ticket_id:
+          type: integer
+          example: 5
+        status:
+          type: string
+          enum:
+            - used
+            - not_used
+          example: "not_used"
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          example: "2024-01-20T12:00:00Z"
+
+    OrderCreate:
+      type: object
+      required:
+        - user_id
+        - ticket_id
+      properties:
+        user_id:
+          type: integer
+          example: 1
+        ticket_id:
+          type: integer
+          example: 5
+
+    OrderUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - used
+            - not_used
+          description: The new status of the order
+          example: "used"

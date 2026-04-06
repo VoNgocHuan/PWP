@@ -15,6 +15,7 @@ from .. import db
 from ..models import Order, User, Ticket
 
 class OrderCollection(Resource):
+    """Resource for managing collections of orders."""
     def get(self):
         """Get a list of all orders."""
         response_data = []
@@ -62,6 +63,7 @@ class OrderCollection(Resource):
         )
 
 class OrderItem(Resource):
+    """Resource for managing a single order, identified by its ID in the URL."""
     def get(self, order):
         """Get details of a single order."""
         return order.serialize()
@@ -79,6 +81,7 @@ class OrderItem(Resource):
         return Response(status=204)
     
 class UserOrderCollection(Resource):
+    """Resource for managing collections of orders for a specific user."""
     def get(self, user):
         """Get a list of all orders for a specific user."""
         response_data = []

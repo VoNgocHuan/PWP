@@ -37,17 +37,18 @@
 
 ### Action points
 *List here the actions points discussed with assistants*
-- In pyproject, we don't have to list the versions.
 - More details in docstring and class parameters.
-- Remove the requirements.text as we have pyproject.tml
-- Maybe use Swagger UI
-- Python libraries for schema checking tools.
-- May use slugify to generate url.
-- Change the order schema after changing the handles.
 - add Caching and Authentication.
+- add back references.
 
 ### Notes
 *Add here notes that you consider important. This is not mandatory*
+- Remove the requirements.text as we have pyproject.tml
+- Change the order schema after changing the handles.
+- Maybe use Swagger UI
+- Python libraries for schema checking tools.
+- May use slugify to generate url.
+- In pyproject, we don't have to list the versions.
 
 ## Meeting 4.
 * **DATE:**

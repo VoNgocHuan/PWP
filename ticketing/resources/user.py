@@ -14,6 +14,7 @@ from .. import db
 from ..models import User
 
 class UserCollection(Resource):
+    """Resource for the collection of users."""
     def get(self):
         """Get a list of all users."""
         response_data = []

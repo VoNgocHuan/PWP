@@ -42,6 +42,7 @@ class User(db.Model):
                             order_by="Order.created_at")
 
     def __repr__(self):
+        """Readable string representation of the user."""
         return f"<User {self.email} ({self.id}, {self.status})>"
 
     def serialize(self):
@@ -103,13 +104,16 @@ class Event(db.Model):
     status = db.Column(db.String(20), nullable=False, default="active")
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
-    ticket = db.relationship("Ticket",
-                            cascade="all, delete-orphan",
-                            back_populates="event",
-                            passive_deletes=False,
-                            order_by="Ticket.id")
+    tickets = db.relationship(
+        "Ticket",
+        cascade="all, delete-orphan",
+        back_populates="event",
+        passive_deletes=False,
+        order_by="Ticket.id"
+        )
 
     def __repr__(self):
+        """Readable string representation of the event."""
         return f"<Event {self.title} ({self.id}, {self.status})>"
 
     def serialize(self):
@@ -199,7 +203,7 @@ class Ticket(db.Model):
     price = db.Column(db.Numeric(10, 2), nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
     remaining = db.Column(db.Integer, nullable=False)
-    event = db.relationship("Event", back_populates="ticket")
+    event = db.relationship("Event", back_populates="tickets")
     orders = db.relationship("Order", back_populates="ticket",
                             passive_deletes=True,
                             order_by="Order.created_at")
