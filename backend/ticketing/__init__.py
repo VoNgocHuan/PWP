@@ -1,4 +1,14 @@
-"""Initialization of the ticketing application."""
+"""Ticketing API Application Package.
+
+This package contains the core application components:
+- models: Database models (User, Event, Ticket, Order)
+- resources: REST API resource endpoints
+- auth: JWT authentication utilities
+- cache: Redis caching layer
+- utils: MasonBuilder and helper functions
+- views: Entry point and profile pages
+- seed: Database seeding functionality
+"""
 import os
 import logging
 from flask import Flask
@@ -8,6 +18,7 @@ from flask_cors import CORS
 from .cache import cache
 
 db = SQLAlchemy()
+"""SQLAlchemy database instance."""
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,9 +26,22 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 logger = logging.getLogger("ticketing")
+"""Application logger."""
+
 
 def create_app(test_config=None):
-    """Create and configure the Flask application."""
+    """Create and configure the Flask application.
+
+    This factory function creates and configures the Flask app,
+    initializes extensions (SQLAlchemy, CORS, Redis cache),
+    registers URL converters, and registers the API blueprint.
+
+    Args:
+        test_config: Optional configuration dict for testing
+
+    Returns:
+        Flask: Configured Flask application instance
+    """
     app = Flask(__name__)
     
     env = os.environ.get("FLASK_ENV", "development")

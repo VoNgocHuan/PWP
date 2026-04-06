@@ -1,10 +1,20 @@
-"""Entry point view for the API."""
+"""Entry point and profile views for the Ticketing API.
+
+This module provides the entry point at /api/, profile pages for 
+documenting resource attributes, and link relations documentation.
+"""
 import json
 from flask import url_for, request, Response
 from .utils import MasonBuilder, LINK_RELATIONS_URL, MASON
 
+
 def entry():
-    """Entry point - returns hypermedia controls to main resources."""
+    """Entry point for the API.
+
+    Returns a Mason-formatted document with hypermedia controls
+    to the main collections (users, events, orders) and login.
+    Clients should start here to discover available actions.
+    """
     body = MasonBuilder()
     body.add_namespace("ticketing", LINK_RELATIONS_URL)
     
@@ -32,7 +42,12 @@ def entry():
 
 
 def link_relations():
-    """Link relations documentation."""
+    """Link relations documentation.
+
+    Returns an HTML page documenting all custom link relations
+    used in the Ticketing API. Each link relation is described
+    with its name and purpose.
+    """
     html = """
     <html>
     <head><title>Ticketing API Link Relations</title></head>
@@ -58,7 +73,11 @@ def link_relations():
 
 
 def profile_user():
-    """User profile documentation."""
+    """User profile documentation.
+
+    Returns an HTML page describing the attributes of User resources.
+    Attributes: id, name, email, status, created_at.
+    """
     html = """
     <html>
     <head><title>User Profile</title></head>
@@ -72,7 +91,11 @@ def profile_user():
 
 
 def profile_event():
-    """Event profile documentation."""
+    """Event profile documentation.
+
+    Returns an HTML page describing the attributes of Event resources.
+    Attributes: id, title, venue, city, description, starts_at, ends_at, status.
+    """
     html = """
     <html>
     <head><title>Event Profile</title></head>
@@ -86,7 +109,11 @@ def profile_event():
 
 
 def profile_ticket():
-    """Ticket profile documentation."""
+    """Ticket profile documentation.
+
+    Returns an HTML page describing the attributes of Ticket resources.
+    Attributes: id, name, price, capacity, remaining.
+    """
     html = """
     <html>
     <head><title>Ticket Profile</title></head>
@@ -100,7 +127,11 @@ def profile_ticket():
 
 
 def profile_order():
-    """Order profile documentation."""
+    """Order profile documentation.
+
+    Returns an HTML page describing the attributes of Order resources.
+    Attributes: id, user_id, ticket_id, status, created_at.
+    """
     html = """
     <html>
     <head><title>Order Profile</title></head>
@@ -114,7 +145,11 @@ def profile_order():
 
 
 def profile_error():
-    """Error profile documentation."""
+    """Error profile documentation.
+
+    Returns an HTML page describing the format of error responses.
+    Error responses include: @message, @messages, resource_url, profile.
+    """
     html = """
     <html>
     <head><title>Error Profile</title></head>

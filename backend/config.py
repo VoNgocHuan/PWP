@@ -1,9 +1,25 @@
-"""Flask configuration loading from environment variables."""
+"""Flask configuration for the Ticketing API.
+
+This module provides configuration classes for different environments:
+- Config: Base configuration
+- DevelopmentConfig: For local development
+- ProductionConfig: For production deployment
+- TestingConfig: For running tests
+
+Configuration is loaded from environment variables with fallback defaults.
+"""
 import os
 
 
 def get_db_uri():
-    """Get database URI from environment or use PostgreSQL default."""
+    """Get database URI from environment variables.
+
+    Constructs the PostgreSQL connection string from environment
+    variables or uses defaults (localhost:5432/postgres/ticketing).
+
+    Returns:
+        str: PostgreSQL connection URI
+    """
     host = os.environ.get("POSTGRES_HOST", "localhost")
     port = os.environ.get("POSTGRES_PORT", "5432")
     user = os.environ.get("POSTGRES_USER", "postgres")
@@ -13,7 +29,11 @@ def get_db_uri():
 
 
 class Config:
-    """Application configuration."""
+    """Base application configuration.
+
+    Provides default settings for database, Redis, and security.
+    All settings can be overridden via environment variables.
+    """
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-change-in-production")
     SQLALCHEMY_DATABASE_URI = get_db_uri()
@@ -24,17 +44,21 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
+    """Development environment configuration."""
     DEBUG = True
 
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Production environment configuration."""
     DEBUG = False
 
 
 class TestingConfig(Config):
-    """Testing configuration."""
+    """Testing environment configuration.
+
+    Uses in-memory SQLite database and separate Redis DB
+    to avoid interfering with development data.
+    """
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     REDIS_DB = 1

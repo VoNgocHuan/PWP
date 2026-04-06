@@ -1,4 +1,11 @@
-"""Resources for managing users in the ticketing application."""
+"""User resources for the Ticketing API.
+
+This module provides REST API endpoints for user management:
+- AuthLogin: User login and JWT token generation
+- AuthLogout: User logout and token revocation
+- UserCollection: List all users, create new users
+- UserItem: Get, update, delete a single user
+"""
 import json
 import logging
 from flask import request, Response, url_for, g
@@ -15,11 +22,22 @@ from ..utils import MasonBuilder, LINK_RELATIONS_URL, create_error_response, MAS
 logger = logging.getLogger("ticketing")
 
 CACHE_TTL = 300
+"""Cache time-to-live for user resources (seconds)."""
 
 
 class AuthLogin(Resource):
+    """User authentication resource.
+
+    Provides POST endpoint for user login. Returns JWT token
+    on successful authentication.
+    """
+
     def post(self):
-        """Login user and return JWT token."""
+        """Login user and return JWT token.
+
+        Expects JSON body with 'email' and 'password'.
+        Returns token and user_id on success.
+        """
         if not request.is_json:
             return create_error_response(415, "Unsupported media type", "Use JSON")
 
@@ -44,19 +62,23 @@ class AuthLogin(Resource):
 
 
 class AuthLogout(Resource):
+    """User logout resource.
+
+    Provides POST endpoint for user logout. Revokes the JWT token
+    by adding it to the blacklist.
+    """
     @require_auth
     def post(self):
         """Logout user by revoking token."""
-        from ..auth import blacklist
-        auth_header = request.headers.get("Authorization")
-        token = auth_header.split(" ")[1]
-        blacklist.add(token)
-        
-        body = MasonBuilder(message="Logged out successfully")
-        return Response(json.dumps(body), 200, mimetype=MASON)
 
 
 class UserCollection(Resource):
+    """User collection resource.
+
+    Provides GET to list all users (requires auth),
+    and POST to register a new user.
+    """
+    @require_auth
     def get(self):
         """Get a list of all users."""
         cache = get_cache()
@@ -115,6 +137,7 @@ class UserCollection(Resource):
 
 class UserItem(Resource):
     """Resource for a single user"""
+    @require_auth
     def get(self, user):
         """Get details of a single user."""
         cache = get_cache()

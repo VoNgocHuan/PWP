@@ -1,4 +1,10 @@
-"""Resources for managing orders in the ticketing application."""
+"""Order resources for the Ticketing API.
+
+This module provides REST API endpoints for order management:
+- OrderCollection: List orders for current user, create new orders
+- OrderItem: Get, cancel a single order
+- UserOrderCollection: List orders for a specific user
+"""
 import json
 import logging
 from flask import request, Response, url_for, g
@@ -16,6 +22,11 @@ logger = logging.getLogger("ticketing")
 
 
 class OrderCollection(Resource):
+    """Order collection resource.
+
+    Provides GET to list orders for the authenticated user,
+    and POST to create new orders (buy tickets).
+    """
     @require_auth
     def get(self):
         """Get a list of orders for the current user."""
@@ -92,6 +103,11 @@ class OrderCollection(Resource):
 
 
 class OrderItem(Resource):
+    """Order item resource.
+
+    Provides GET to view a single order (own orders only),
+    and DELETE to cancel an order.
+    """
     @require_auth
     def get(self, order):
         """Get details of a single order (only if own order)."""
@@ -131,6 +147,11 @@ class OrderItem(Resource):
     
 
 class UserOrderCollection(Resource):
+    """User order collection resource.
+
+    Provides GET to list all orders for a specific user.
+    Users can only view their own orders.
+    """
     @require_auth
     def get(self, user):
         """Get a list of all orders for a specific user (only if own)."""

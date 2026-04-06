@@ -1,18 +1,35 @@
-"""Caching utilities for the ticketing application using Redis."""
+"""Caching utilities for the Ticketing API using Redis.
+
+This module provides a Redis-based caching layer for improving
+API performance by caching frequently accessed resources.
+"""
 import json
 import redis
 from flask import current_app
 
 class Cache:
-    """Redis cache wrapper for the ticketing application."""
+    """Redis cache wrapper for the Ticketing API.
+    
+    Provides methods for getting, setting, and deleting cached values.
+    Gracefully handles cases when Redis is unavailable.
+    """
     
     def __init__(self, app=None):
+        """Initialize the Cache.
+
+        Args:
+            app: Optional Flask app to initialize with
+        """
         self.redis_client = None
         if app is not None:
             self.init_app(app)
     
     def init_app(self, app):
-        """Initialize the cache with app config."""
+        """Initialize the cache with app config.
+
+        Args:
+            app: Flask application instance
+        """
         try:
             redis_host = app.config.get("REDIS_HOST", "localhost")
             redis_port = app.config.get("REDIS_PORT", 6379)
@@ -30,7 +47,14 @@ class Cache:
             self.redis_client = None
     
     def get(self, key):
-        """Get a value from cache."""
+        """Get a value from cache.
+
+        Args:
+            key: Cache key to retrieve
+
+        Returns:
+            Cached value as dictionary, or None if not found
+        """
         if self.redis_client is None:
             return None
         try:
@@ -42,7 +66,16 @@ class Cache:
         return None
     
     def set(self, key, value, ttl=None):
-        """Set a value in cache with optional TTL in seconds."""
+        """Set a value in cache with optional TTL.
+
+        Args:
+            key: Cache key
+            value: Value to cache (will be JSON serialized)
+            ttl: Time-to-live in seconds (optional)
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         if self.redis_client is None:
             return False
         try:
@@ -56,7 +89,14 @@ class Cache:
             return False
     
     def delete(self, key):
-        """Delete a key from cache."""
+        """Delete a key from cache.
+
+        Args:
+            key: Cache key to delete
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         if self.redis_client is None:
             return False
         try:
@@ -66,7 +106,14 @@ class Cache:
             return False
     
     def invalidate_pattern(self, pattern):
-        """Invalidate all keys matching a pattern."""
+        """Invalidate all keys matching a pattern.
+
+        Args:
+            pattern: Redis key pattern (e.g., 'user:*')
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         if self.redis_client is None:
             return False
         try:
@@ -78,7 +125,12 @@ class Cache:
             return False
 
 cache = Cache()
+"""Global cache instance."""
 
 def get_cache():
-    """Get the cache instance."""
+    """Get the cache instance.
+
+    Returns:
+        Cache: The global cache instance
+    """
     return cache

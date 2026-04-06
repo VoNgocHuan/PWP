@@ -1,4 +1,9 @@
-"""Resources for managing tickets in the ticketing application."""
+"""Ticket resources for the Ticketing API.
+
+This module provides REST API endpoints for ticket management:
+- TicketCollection: List tickets for an event, create new tickets
+- TicketItem: Get, delete a single ticket
+"""
 import json
 from flask import request, Response, url_for
 from flask_restful import Resource
@@ -12,10 +17,15 @@ from ..cache import get_cache
 from ..utils import MasonBuilder, LINK_RELATIONS_URL, create_error_response, MASON
 
 CACHE_TTL = 120
+"""Cache TTL for ticket resources (seconds)."""
 
 
 class TicketCollection(Resource):
-    """Resource for the collection of tickets for a specific event"""
+    """Ticket collection resource for a specific event.
+
+    Provides GET to list all tickets for an event,
+    and POST to create new tickets.
+    """
     def get(self, event):
         """Get a list of all tickets for the given event."""
         cache = get_cache()
@@ -73,7 +83,10 @@ class TicketCollection(Resource):
 
 
 class TicketItem(Resource):
-    """Resource for a single ticket, identified by its ID in the URL."""
+    """Ticket item resource.
+
+    Provides GET to view a single ticket, and DELETE to remove it.
+    """
     def get(self, event, ticket):
         """Get details of a single ticket."""
         if ticket.event != event:

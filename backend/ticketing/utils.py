@@ -1,4 +1,11 @@
-"""Utility functions for the ticketing application."""
+"""Utility functions and classes for the Ticketing API.
+
+This module provides:
+- MasonBuilder: A dictionary subclass for building Mason hypermedia documents
+- URL converters: For converting between URLs and model objects
+- create_error_response: Helper for creating Mason error responses
+- Constants: LINK_RELATIONS_URL, ERROR_PROFILE, MASON content type
+"""
 import json
 from flask import request, Response
 from werkzeug.exceptions import NotFound
@@ -8,8 +15,13 @@ from . import db
 from .models import User, Event, Ticket, Order
 
 LINK_RELATIONS_URL = "/api/link-relations#"
+"""URL for the link relations documentation."""
+
 ERROR_PROFILE = "/api/profiles/error-profile/"
+"""URL for the error profile documentation."""
+
 MASON = "application/vnd.mason+json"
+"""Mason hypermedia content type."""
 
 
 def create_error_response(status_code, title, message=None):
@@ -28,35 +40,75 @@ def create_error_response(status_code, title, message=None):
 
 
 class MasonBuilder(dict):
-    """Dictionary subclass that builds Mason hypermedia documents."""
+    """Dictionary subclass for building Mason hypermedia documents.
+
+    MasonBuilder extends dict to provide convenient methods for adding
+    hypermedia elements (@namespaces, @controls, @error) to API responses.
+    """
     
     def add_namespace(self, ns, uri):
-        """Add a namespace for custom link relations."""
+        """Add a namespace for custom link relations.
+
+        Args:
+            ns: Namespace prefix (e.g., 'ticketing')
+            uri: Full namespace URI (e.g., '/api/link-relations#')
+        """
         if "@namespaces" not in self:
             self["@namespaces"] = {}
         self["@namespaces"][ns] = {"name": uri}
     
     def add_control(self, rel, href, **kwargs):
-        """Add a hypermedia control."""
+        """Add a hypermedia control.
+
+        Args:
+            rel: Link relation name (e.g., 'self', 'edit')
+            href: Target URI for the control
+            **kwargs: Additional control attributes (method, title, schema, etc.)
+        """
         if "@controls" not in self:
             self["@controls"] = {}
         self["@controls"][rel] = {"href": href}
         self["@controls"][rel].update(kwargs)
     
     def add_control_post(self, rel, title, href, schema):
-        """Add a POST control with schema."""
+        """Add a POST control with JSON schema.
+
+        Args:
+            rel: Link relation name (e.g., 'ticketing:add-event')
+            title: Human-readable title for the control
+            href: Target URI for the POST request
+            schema: JSON schema for the request body
+        """
         self.add_control(rel, href, method="POST", title=title, schema=schema, encoding="json")
     
     def add_control_put(self, rel, title, href, schema):
-        """Add a PUT control with schema."""
+        """Add a PUT control with JSON schema.
+
+        Args:
+            rel: Link relation name (e.g., 'edit')
+            title: Human-readable title for the control
+            href: Target URI for the PUT request
+            schema: JSON schema for the request body
+        """
         self.add_control(rel, href, method="PUT", title=title, schema=schema, encoding="json")
     
     def add_control_delete(self, rel, title, href):
-        """Add a DELETE control."""
+        """Add a DELETE control.
+
+        Args:
+            rel: Link relation name (e.g., 'ticketing:delete')
+            title: Human-readable title for the control
+            href: Target URI for the DELETE request
+        """
         self.add_control(rel, href, method="DELETE", title=title)
     
     def add_error(self, title, details):
-        """Add an error message to the document."""
+        """Add an error message to the document.
+
+        Args:
+            title: Short error title (becomes @message)
+            details: Detailed error message (added to @messages array)
+        """
         self["@error"] = {
             "@message": title,
             "@messages": [details] if details else []

@@ -1,4 +1,9 @@
-"""Resources for managing events in the ticketing application."""
+"""Event resources for the Ticketing API.
+
+This module provides REST API endpoints for event management:
+- EventCollection: List all events, create new events
+- EventItem: Get, update, delete a single event
+"""
 import json
 from flask import request, Response, url_for
 from flask_restful import Resource
@@ -12,11 +17,17 @@ from ..cache import get_cache
 from ..utils import MasonBuilder, LINK_RELATIONS_URL, create_error_response, MASON
 
 CACHE_TTL_LIST = 300
+"""Cache TTL for event list (seconds)."""
+
 CACHE_TTL_ITEM = 120
+"""Cache TTL for single event (seconds)."""
 
 
 class EventCollection(Resource):
-    """Resource for the collection of events, accessible at /events."""
+    """Event collection resource.
+
+    Provides GET to list all events, and POST to create new events.
+    """
     def get(self):
         """Get a list of all events."""
         cache = get_cache()

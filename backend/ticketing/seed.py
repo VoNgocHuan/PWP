@@ -1,12 +1,21 @@
-"""Database seeding commands."""
+"""Database seeding commands for the Ticketing API.
+
+This module provides functions to seed the database with initial
+sample data for development and testing purposes.
+"""
 import click
 from datetime import datetime, timedelta
 from decimal import Decimal
 from . import db
 from .models import User, Event, Ticket, Order
 
+
 def seed_database():
-    """Seed the database with initial data."""
+    """Seed the database with initial data.
+
+    Creates sample users, events, and tickets if the database
+    is empty. Prints a message if data already exists.
+    """
     if User.query.first():
         click.echo("Database already seeded. Skipping.")
         return
@@ -52,8 +61,13 @@ def seed_database():
     click.echo("Database seeded successfully!")
     click.echo(f"Created {len(users)} users, {len(events)} events, {len(tickets)} tickets")
 
+
 def register_commands(app):
-    """Register CLI commands."""
+    """Register CLI commands for the Flask app.
+
+    Args:
+        app: Flask application instance
+    """
     @app.cli.command("seed-db")
     def seed_db_command():
         """Seed the database with initial data."""
