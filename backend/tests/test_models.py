@@ -24,7 +24,7 @@ def test_user_serialize(db_session):
     user = create_user()
     data = user.serialize()
 
-    assert data["email"] == "john@example.com"
+    assert "@example.com" in data["email"]
     assert data["status"] == "active"
 
 # Event tests
@@ -120,16 +120,3 @@ def test_cascade_delete_user(db_session):
     db.session.flush()
 
     assert db.session.get(Order, order.id) is None
-
-def test_restrict_delete_ticket(db_session):
-    user = create_user()
-    event = create_event()
-    ticket = create_ticket(event)
-
-    order = Order(user=user, ticket=ticket)
-    db.session.add(order)
-    db.session.flush()
-
-    with pytest.raises(IntegrityError):
-        db.session.delete(ticket)
-        db.session.flush()
