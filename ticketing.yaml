@@ -1,8 +1,10 @@
 openapi: 3.0.4
 info:
   title: Ticketing API
-  description: API for managing users, events, tickets, and orders
+  description: |
+    API for managing users, events, tickets, and orders
   version: 1.0.0
+
 servers:
   - url: /api
     description: Main API server
@@ -12,47 +14,87 @@ paths:
     get:
       summary: API entry point
       operationId: getEntry
-      responses:
-        '200':
-          description: API information
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Ticketing API v1.0.0"
-
-  /users/:
-    get:
-      summary: Get all users
-      operationId: getUsers
       tags:
-        - Users
-      parameters:
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/offset'
+        - Entry point
       responses:
         '200':
-          description: List of all users
+          description: |
+            Successful API response with 
+            hypermedia controls
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+            application/vnd.mason+json:
               example:
-                - id: 1
-                  name: "John Doe"
-                  email: "john@example.com"
-                  status: "active"
-                  created_at: "2024-01-15T10:30:00Z"
-                - id: 2
-                  name: "Jane Smith"
-                  email: "jane@example.com"
-                  status: "active"
-                  created_at: "2024-01-16T14:20:00Z"
+                {
+                  "@namespaces": {
+                    "ticketing": {
+                      "name": "/api/link-relations#"
+                    }
+                  },
+                  "@controls": {
+                    "ticketing:users-all": {
+                      "href": "/api/users/",
+                      "title": "All users"
+                    },
+                    "ticketing:events-all": {
+                      "href": "/api/events/",
+                      "title": "All events"
+                    },
+                    "ticketing:orders": {
+                      "href": "/api/orders/",
+                      "title": "My orders"
+                    },
+                    "ticketing:login": {
+                      "href": "/api/auth/login/",
+                      "method": "POST",
+                      "title": "Login"
+                    }
+                  }
+                }
+
+  /auth/login/:
+    post:
+      summary: User login
+      description: |
+        Authenticate user and receive JWT token. 
+        The token must be included
+        in subsequent requests using the 
+        Authorization header.
+      operationId: loginUser
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: User's password
+              example:
+                {
+                  "email": "alice@example.com",
+                  "password": "password123"
+                }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/vnd.mason+json:
+              example:
+                {
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "user_id": 1
+                }
         '401':
           description: Unauthorized
           content:
@@ -62,15 +104,107 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
-        '500':
-          description: Internal server error
+        '415':
+          description: Unsupported media type - JSON required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Internal Server Error"
-                message: "An unexpected error occurred"
+                error: "Unsupported Media Type"
+                message: "Content-Type must be application/json"
+
+  /auth/logout/:
+    post:
+      summary: User logout
+      description: |
+        Logout user by revoking the JWT token. 
+        The token is added to a blacklist.
+      operationId: logoutUser
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.mason+json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+
+  /users/:
+    get:
+      summary: Get all users
+      description: |
+        Returns a list of all users. Requires authentication.
+        Each user item includes hypermedia controls.
+      operationId: getUsers
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/vnd.mason+json:
+              example:
+                {
+                  "items": [
+                    {
+                      "id": 1,
+                      "name": "Alice Wonderland",
+                      "email": "alice@example.com",
+                      "status": "active",
+                      "created_at": "2026-04-06T09:47:44.351470",
+                      "@controls": {
+                        "self": {"href": "/api/users/1/"},
+                        "profile": {"href": "/api/profiles/user/"}
+                      }
+                    }
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/users/"},
+                    "ticketing:add-user": {
+                      "href": "/api/users/",
+                      "method": "POST",
+                      "title": "Register new user",
+                      "schema": {
+                        "type": "object",
+                        "required": ["name", "email", "password"],
+                        "properties": {
+                          "name": {"type": "string"},
+                          "email": {"type": "string"},
+                          "password": {"type": "string", "minLength": 6},
+                          "status": {"type": "string", "enum": ["active", "disabled"]}
+                        }
+                      },
+                      "encoding": "json"
+                    }
+                  }
+                }
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Authentication required"
+
     post:
       summary: Create a new user
       operationId: createUser
@@ -81,30 +215,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/User'
             example:
               name: "John Doe"
               email: "john@example.com"
-              status: "active"
+              password: "securepassword123"
       responses:
         '201':
           description: User created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-              example:
-                id: 1
-                name: "John Doe"
-                email: "john@example.com"
-                status: "active"
-                created_at: "2024-01-15T10:30:00Z"
           headers:
-            Location:
+            location:
+              description: URL of the created user
               schema:
                 type: string
-              description: URL of the created user
               example: "/api/users/1"
+          content:
+            application/vnd.mason+json:
+              example:
+                {
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                  "user_id": 3
+                }
         '400':
           description: Invalid request body
           content:
@@ -114,15 +245,6 @@ paths:
               example:
                 error: "Bad Request"
                 message: "Invalid request body"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
         '409':
           description: Email already exists
           content:
@@ -132,37 +254,73 @@ paths:
               example:
                 error: "Conflict"
                 message: "Email already exists"
-        '422':
-          description: Validation error
+        '415':
+          description: Unsupported media type - JSON required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+                error: "Unsupported Media Type"
+                message: "Content-Type must be application/json"
 
   /users/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/user_id'
+
     get:
       summary: Get a user by ID
+      description: |
+        Returns details of a specific user by ID. 
+        Requires authentication.
       operationId: getUser
       tags:
         - Users
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: User details
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+            application/vnd.mason+json:
               example:
-                id: 1
-                name: "John Doe"
-                email: "john@example.com"
-                status: "active"
-                created_at: "2024-01-15T10:30:00Z"
+                {
+                  "id": 1,
+                  "name": "Alice Wonderland",
+                  "email": "alice@example.com",
+                  "status": "active",
+                  "created_at": "2026-04-06T09:47:44.351470",
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/users/1/"},
+                    "collection": {"href": "/api/users/"},
+                    "profile": {"href": "/api/profiles/user/"},
+                    "ticketing:orders": {"href": "/api/users/1/orders/"},
+                    "edit": {
+                      "href": "/api/users/1/",
+                      "method": "PUT",
+                      "title": "Edit this user",
+                      "schema": {
+                        "type": "object",
+                        "required": ["name", "email", "password"],
+                        "properties": {
+                          "name": {"type": "string"},
+                          "email": {"type": "string"},
+                          "password": {"type": "string", "minLength": 6},
+                          "status": {"type": "string", "enum": ["active", "disabled"]}
+                        }
+                      },
+                      "encoding": "json"
+                    },
+                    "ticketing:delete": {
+                      "href": "/api/users/1/",
+                      "method": "DELETE",
+                      "title": "Delete this user"
+                    }
+                  }
+                }
         '401':
           description: Unauthorized
           content:
@@ -181,23 +339,27 @@ paths:
               example:
                 error: "Not Found"
                 message: "User not found"
+    
     put:
       summary: Update a user
+      description: |
+        Update details of a specific user by ID. 
+        Requires authentication.
       operationId: updateUser
       tags:
         - Users
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/User'
             example:
               name: "John Doe Updated"
               email: "john.updated@example.com"
-              status: "active"
+              "password": "newpassword456"
       responses:
         '204':
           description: User updated
@@ -237,22 +399,25 @@ paths:
               example:
                 error: "Conflict"
                 message: "Email already exists"
-        '422':
-          description: Validation error
+        '415':
+          description: Unsupported media type - JSON required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+                error: "Unsupported Media Type"
+                message: "Content-Type must be application/json"
+
     delete:
       summary: Delete a user
+      description: |
+        Delete a specific user by ID. Requires authentication.
       operationId: deleteUser
       tags:
         - Users
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      security:
+        - bearerAuth: []
       responses:
         '204':
           description: User deleted
@@ -276,34 +441,46 @@ paths:
                 message: "User not found"
 
   /users/{user_id}/orders:
+    parameters:
+      - $ref: '#/components/parameters/user_id'
+
     get:
       summary: Get all orders for a user
+      description: |
+        Returns a list of all orders for a specific user by ID. 
+        Requires authentication.
       operationId: getUserOrders
       tags:
         - Users
         - Orders
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: List of user's orders
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Order'
+            application/vnd.mason+json:
               example:
-                - id: 1
-                  user_id: 1
-                  ticket_id: 5
-                  status: "not_used"
-                  created_at: "2024-01-20T12:00:00Z"
-                - id: 2
-                  user_id: 1
-                  ticket_id: 8
-                  status: "used"
-                  created_at: "2024-01-21T09:15:00Z"
+                {
+                  "items": [
+                    {
+                      "id": 1,
+                      "user_id": 1,
+                      "ticket_id": 1,
+                      "status": "not_used",
+                      "created_at": "2026-04-06T10:00:00.000000",
+                      "@controls": {
+                        "self": {"href": "/api/orders/1/"}
+                      }
+                    }
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/users/1/orders/"}
+                  }
+                }
         '401':
           description: Unauthorized
           content:
@@ -326,75 +503,89 @@ paths:
   /events/:
     get:
       summary: Get all events
+      description: |
+        Returns a list of all events.
+        Each event item includes hypermedia controls.
       operationId: getEvents
       tags:
         - Events
-      parameters:
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/offset'
       responses:
         '200':
           description: List of all events
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
+            application/vnd.mason+json:
               example:
-                - id: 1
-                  title: "Concert Night"
-                  venue: "Arena Stadium"
-                  city: "New York"
-                  description: "An amazing live concert"
-                  starts_at: "2024-06-15T19:00:00Z"
-                  ends_at: "2024-06-15T23:00:00Z"
-                  status: "active"
-                - id: 2
-                  title: "Tech Conference"
-                  venue: "Convention Center"
-                  city: "San Francisco"
-                  description: "Annual tech conference"
-                  starts_at: "2024-07-20T09:00:00Z"
-                  ends_at: "2024-07-22T18:00:00Z"
-                  status: "active"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Internal Server Error"
-                message: "An unexpected error occurred"
+                {
+                  "items": [
+                    {
+                      "id": 1,
+                      "title": "Summer Concert",
+                      "venue": "Central Park Arena",
+                      "city": "Helsinki",
+                      "description": "A great summer concert",
+                      "starts_at": "2026-05-06T12:47:45.050401",
+                      "ends_at": null,
+                      "status": "active",
+                      "tickets": [
+                        {"id": 1, "name": "Standard", "price": 25.0, "capacity": 100, "remaining": 100},
+                        {"id": 2, "name": "VIP", "price": 50.0, "capacity": 20, "remaining": 20}
+                      ],
+                      "@controls": {
+                        "self": {"href": "/api/events/1/"},
+                        "profile": {"href": "/api/profiles/event/"},
+                        "ticketing:tickets": {"href": "/api/events/1/tickets/"}
+                      }
+                    }
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/events/"},
+                    "ticketing:add-event": {
+                      "href": "/api/events/",
+                      "method": "POST",
+                      "title": "Create new event",
+                      "schema": {
+                        "type": "object",
+                        "required": ["title", "venue", "city", "starts_at"],
+                        "properties": {
+                          "title": {"type": "string"},
+                          "venue": {"type": "string"},
+                          "city": {"type": "string"},
+                          "description": {"type": "string"},
+                          "starts_at": {"type": "string", "format": "date-time"},
+                          "ends_at": {"type": ["string", "null"], "format": "date-time"},
+                          "status": {"type": "string", "enum": ["active", "cancelled"]}
+                        }
+                      },
+                      "encoding": "json"
+                    }
+                  }
+                }
+
     post:
       summary: Create a new event
+      description: |
+        Create a new event. Requires authentication.
       operationId: createEvent
       tags:
         - Events
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventCreate'
+              $ref: '#/components/schemas/Event'
             example:
-              title: "New Concert"
-              venue: "Stadium Arena"
-              city: "Los Angeles"
-              description: "A grand musical event"
-              starts_at: "2024-08-01T20:00:00Z"
-              ends_at: "2024-08-01T23:30:00Z"
-              status: "active"
+              {
+                "title": "New Concert",
+                "venue": "Test Venue",
+                "city": "Helsinki",
+                "starts_at": "2026-06-01T18:00:00"
+              }
       responses:
         '201':
           description: Event created
@@ -403,13 +594,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Event'
               example:
-                id: 3
                 title: "New Concert"
-                venue: "Stadium Arena"
-                city: "Los Angeles"
-                description: "A grand musical event"
-                starts_at: "2024-08-01T20:00:00Z"
-                ends_at: "2024-08-01T23:30:00Z"
+                venue: "Test Venue"
+                city: "Helsinki"
+                description: null
+                starts_at: "2026-06-01T18:00:00Z"
+                ends_at: null
                 status: "active"
           headers:
             Location:
@@ -435,49 +625,90 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
-        '422':
-          description: Validation error
+        '409':
+          description: Event conflict
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+                error: "Conflict"
+                message: "Event time conflicts with an existing event"
+        '415':
+          description: Unsupported media type - JSON required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unsupported Media Type"
+                message: "Content-Type must be application/json"
 
   /events/{event_id}:
+    parameters:
+      - $ref: '#/components/parameters/event_id'
+    
     get:
       summary: Get an event by ID
+      description: |
+        Returns details of a specific event by ID.
+        Each event item includes hypermedia controls.
       operationId: getEvent
       tags:
         - Events
-      parameters:
-        - $ref: '#/components/parameters/event_id'
       responses:
         '200':
           description: Event details
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Event'
+            application/vnd.mason+json:
               example:
-                id: 1
-                title: "Concert Night"
-                venue: "Arena Stadium"
-                city: "New York"
-                description: "An amazing live concert"
-                starts_at: "2024-06-15T19:00:00Z"
-                ends_at: "2024-06-15T23:00:00Z"
-                status: "active"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
+                {
+                  "id": 1,
+                  "title": "Summer Concert",
+                  "venue": "Central Park Arena",
+                  "city": "Helsinki",
+                  "description": "A great summer concert",
+                  "starts_at": "2026-05-06T12:47:45.050401",
+                  "ends_at": null,
+                  "status": "active",
+                  "tickets": [
+                    {"id": 1, "name": "Standard", "price": 25.0, "capacity": 100, "remaining": 100}
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/events/1/"},
+                    "collection": {"href": "/api/events/"},
+                    "profile": {"href": "/api/profiles/event/"},
+                    "ticketing:tickets": {"href": "/api/events/1/tickets/"},
+                    "ticketing:add-ticket": {
+                      "href": "/api/events/1/tickets/",
+                      "method": "POST",
+                      "title": "Add ticket to event",
+                      "schema": {
+                        "type": "object",
+                        "required": ["name", "price", "capacity"],
+                        "properties": {
+                          "name": {"type": "string"},
+                          "price": {"type": "number", "minimum": 0},
+                          "capacity": {"type": "integer", "minimum": 0}
+                        }
+                      },
+                      "encoding": "json"
+                    },
+                    "edit": {
+                      "href": "/api/events/1/",
+                      "method": "PUT",
+                      "title": "Edit this event"
+                    },
+                    "ticketing:delete": {
+                      "href": "/api/events/1/",
+                      "method": "DELETE",
+                      "title": "Delete this event"
+                    }
+                  }
+                }
         '404':
           description: Event not found
           content:
@@ -487,27 +718,17 @@ paths:
               example:
                 error: "Not Found"
                 message: "Event not found"
+    
     put:
       summary: Update an event
+      description: |
+        Update details of a specific event by ID. 
+        Requires authentication.
       operationId: updateEvent
       tags:
         - Events
-      parameters:
-        - $ref: '#/components/parameters/event_id'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventCreate'
-            example:
-              title: "Updated Concert Night"
-              venue: "New Arena"
-              city: "Chicago"
-              description: "Updated event description"
-              starts_at: "2024-06-20T20:00:00Z"
-              ends_at: "2024-06-20T23:00:00Z"
-              status: "active"
+      security:
+        - bearerAuth: []
       responses:
         '204':
           description: Event updated
@@ -547,22 +768,17 @@ paths:
               example:
                 error: "Conflict"
                 message: "Cannot update event with existing orders"
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+
     delete:
       summary: Delete an event
+      description: |
+        Delete a specific event by ID. Requires authentication.
+        Cannot delete an event if there are existing orders for its tickets.
       operationId: deleteEvent
       tags:
         - Events
-      parameters:
-        - $ref: '#/components/parameters/event_id'
+      security:
+        - bearerAuth: []
       responses:
         '204':
           description: Event deleted
@@ -595,43 +811,45 @@ paths:
                 message: "Cannot delete event with existing orders"
 
   /events/{event_id}/tickets/:
+    parameters:
+      - $ref: '#/components/parameters/event_id'
+
     get:
       summary: Get all tickets for an event
+      description: |
+        Returns a list of all tickets for a specific event by ID.
       operationId: getEventTickets
       tags:
         - Events
         - Tickets
-      parameters:
-        - $ref: '#/components/parameters/event_id'
       responses:
         '200':
           description: List of tickets for the event
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Ticket'
+            application/vnd.mason+json:
               example:
-                - id: 1
-                  name: "VIP"
-                  price: 150.00
-                  capacity: 100
-                  remaining: 50
-                - id: 2
-                  name: "General Admission"
-                  price: 50.00
-                  capacity: 500
-                  remaining: 200
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
+                {
+                  "items": [
+                    {
+                      "id": 1,
+                      "name": "Standard",
+                      "price": 25.0,
+                      "capacity": 100,
+                      "remaining": 100,
+                      "@controls": {
+                        "self": {"href": "/api/events/1/tickets/1/"},
+                        "profile": {"href": "/api/profiles/ticket/"}
+                      }
+                    }
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/events/1/tickets/"},
+                    "up": {"href": "/api/events/1/"}
+                  }
+                }
         '404':
           description: Event not found
           content:
@@ -641,20 +859,24 @@ paths:
               example:
                 error: "Not Found"
                 message: "Event not found"
+
     post:
       summary: Create a ticket for an event
+      description: |
+        Create a new ticket for a specific event by ID. 
+        Requires authentication.
       operationId: createTicket
       tags:
         - Events
         - Tickets
-      parameters:
-        - $ref: '#/components/parameters/event_id'
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketCreate'
+              $ref: '#/components/schemas/Ticket'
             example:
               name: "Early Bird"
               price: 75.00
@@ -667,11 +889,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Ticket'
               example:
-                id: 3
                 name: "Early Bird"
                 price: 75.00
                 capacity: 200
-                remaining: 200
           headers:
             Location:
               schema:
@@ -696,15 +916,6 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
-        '404':
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Not Found"
-                message: "Event not found"
         '409':
           description: Ticket name must be unique per event
           content:
@@ -714,47 +925,41 @@ paths:
               example:
                 error: "Conflict"
                 message: "Ticket name must be unique per event"
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
 
   /events/{event_id}/tickets/{ticket_id}:
+    parameters:
+      - $ref: '#/components/parameters/event_id'
+      - $ref: '#/components/parameters/ticket_id'
+
     get:
       summary: Get a ticket by ID
+      description: |
+        Returns details of a specific ticket by ID for a specific event by ID.
       operationId: getTicket
       tags:
         - Tickets
-      parameters:
-        - $ref: '#/components/parameters/event_id'
-        - $ref: '#/components/parameters/ticket_id'
       responses:
         '200':
           description: Ticket details
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Ticket'
+            application/vnd.mason+json:
               example:
-                id: 1
-                name: "VIP"
-                price: 150.00
-                capacity: 100
-                remaining: 50
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
+                {
+                  "id": 1,
+                  "name": "Standard",
+                  "price": 25.0,
+                  "capacity": 100,
+                  "remaining": 50,
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/events/1/tickets/1/"},
+                    "collection": {"href": "/api/events/1/tickets/"},
+                    "profile": {"href": "/api/profiles/ticket/"},
+                    "up": {"href": "/api/events/1/"}
+                  }
+                }
         '404':
           description: Ticket or event not found
           content:
@@ -764,20 +969,23 @@ paths:
               example:
                 error: "Not Found"
                 message: "Ticket or event not found"
+    
     put:
       summary: Update a ticket
+      description: |
+        Update details of a specific ticket by ID for a specific event by ID. 
+        Requires authentication.
       operationId: updateTicket
       tags:
         - Tickets
-      parameters:
-        - $ref: '#/components/parameters/event_id'
-        - $ref: '#/components/parameters/ticket_id'
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TicketCreate'
+              $ref: '#/components/schemas/Ticket'
             example:
               name: "VIP Updated"
               price: 175.00
@@ -812,32 +1020,26 @@ paths:
               example:
                 error: "Not Found"
                 message: "Ticket or event not found"
-        '409':
-          description: Cannot update ticket with existing orders
+        '415':
+          description: Unsupported media type - JSON required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Conflict"
-                message: "Cannot update ticket with existing orders"
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+                error: "Unsupported Media Type"
+                message: "Content-Type must be application/json"
+
     delete:
       summary: Delete a ticket
+      description: |
+        Delete a specific ticket by ID for a specific event by ID. 
+        Requires authentication. Cannot delete a ticket if there are existing orders for it.
       operationId: deleteTicket
       tags:
         - Tickets
-      parameters:
-        - $ref: '#/components/parameters/event_id'
-        - $ref: '#/components/parameters/ticket_id'
+      security:
+        - bearerAuth: []
       responses:
         '204':
           description: Ticket deleted
@@ -872,9 +1074,14 @@ paths:
   /orders/:
     get:
       summary: Get all orders
+      description: |
+        Returns a list of all orders. Requires authentication.
+        Each order item includes hypermedia controls.
       operationId: getOrders
       tags:
         - Orders
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
@@ -882,22 +1089,41 @@ paths:
         '200':
           description: List of all orders
           content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Order'
+            application/vnd.mason+json:
               example:
-                - id: 1
-                  user_id: 1
-                  ticket_id: 5
-                  status: "not_used"
-                  created_at: "2024-01-20T12:00:00Z"
-                - id: 2
-                  user_id: 2
-                  ticket_id: 8
-                  status: "used"
-                  created_at: "2024-01-21T09:15:00Z"
+                {
+                  "items": [
+                    {
+                      "id": 1,
+                      "user_id": 1,
+                      "ticket_id": 1,
+                      "status": "not_used",
+                      "created_at": "2026-04-06T10:00:00.000000",
+                      "@controls": {
+                        "self": {"href": "/api/orders/1/"}
+                      }
+                    }
+                  ],
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/orders/"},
+                    "ticketing:buy": {
+                      "href": "/api/orders/",
+                      "method": "POST",
+                      "title": "Buy ticket",
+                      "schema": {
+                        "type": "object",
+                        "required": ["ticket_id"],
+                        "properties": {
+                          "ticket_id": {"type": "integer"}
+                        }
+                      },
+                      "encoding": "json"
+                    }
+                  }
+                }
         '401':
           description: Unauthorized
           content:
@@ -907,42 +1133,34 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Internal Server Error"
-                message: "An unexpected error occurred"
+    
     post:
       summary: Create a new order
+      description: |
+        Create a new order (buy a ticket). Requires authentication.
       operationId: createOrder
       tags:
         - Orders
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OrderCreate'
+              $ref: '#/components/schemas/Order'
             example:
-              user_id: 1
-              ticket_id: 5
+              ticket_id: 1
       responses:
         '201':
           description: Order created
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
+            application/vnd.mason+json:
               example:
-                id: 3
-                user_id: 1
-                ticket_id: 5
-                status: "not_used"
-                created_at: "2024-01-25T15:30:00Z"
+                {
+                  "message": "Order created successfully",
+                  "order_id": 1
+                }
           headers:
             Location:
               schema:
@@ -985,37 +1203,47 @@ paths:
               example:
                 error: "Conflict"
                 message: "Ticket sold out"
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
 
   /orders/{order_id}:
+    parameters:
+      - $ref: '#/components/parameters/order_id'
+
     get:
       summary: Get an order by ID
+      description: |
+        Returns details of a specific order by ID. Requires authentication.
       operationId: getOrder
       tags:
         - Orders
-      parameters:
-        - $ref: '#/components/parameters/order_id'
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Order details
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
+            application/vnd.mason+json:
               example:
-                id: 1
-                user_id: 1
-                ticket_id: 5
-                status: "not_used"
-                created_at: "2024-01-20T12:00:00Z"
+                {
+                  "id": 1,
+                  "user_id": 1,
+                  "ticket_id": 1,
+                  "status": "not_used",
+                  "created_at": "2026-04-06T10:00:00.000000",
+                  "@namespaces": {
+                    "ticketing": {"name": "/api/link-relations#"}
+                  },
+                  "@controls": {
+                    "self": {"href": "/api/orders/1/"},
+                    "collection": {"href": "/api/orders/"},
+                    "profile": {"href": "/api/profiles/order/"},
+                    "ticketing:ticket": {"href": "/api/events/1/tickets/1/"},
+                    "ticketing:cancel": {
+                      "href": "/api/orders/1/",
+                      "method": "DELETE",
+                      "title": "Cancel this order"
+                    }
+                  }
+                }
         '401':
           description: Unauthorized
           content:
@@ -1034,70 +1262,20 @@ paths:
               example:
                 error: "Not Found"
                 message: "Order not found"
-    put:
-      summary: Update an order
-      operationId: updateOrder
-      tags:
-        - Orders
-      parameters:
-        - $ref: '#/components/parameters/order_id'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OrderUpdate'
-            example:
-              status: "used"
-      responses:
-        '204':
-          description: Order updated
-        '400':
-          description: Invalid request body
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Bad Request"
-                message: "Invalid request body"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        '404':
-          description: Order not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Not Found"
-                message: "Order not found"
-        '422':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unprocessable Entity"
-                message: "Validation failed"
+    
     delete:
       summary: Delete an order
+      description: |
+        Delete a specific order by ID (cancel the order). Requires authentication.
+        Cannot delete an order if it has already been used.
       operationId: deleteOrder
       tags:
         - Orders
-      parameters:
-        - $ref: '#/components/parameters/order_id'
+      security:
+        - bearerAuth: []
       responses:
         '204':
-          description: Order deleted
+          description: Order cancelled
         '401':
           description: Unauthorized
           content:
@@ -1125,6 +1303,76 @@ paths:
               example:
                 error: "Conflict"
                 message: "Could not delete order"
+
+  /profiles/user/:
+    get:
+      summary: User Profile
+      description: Profile documentation for User resources.
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: User profile HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /profiles/event/:
+    get:
+      summary: Event Profile
+      description: Profile documentation for Event resources.
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: Event profile HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /profiles/ticket/:
+    get:
+      summary: Ticket Profile
+      description: Profile documentation for Ticket resources.
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: Ticket profile HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /profiles/order/:
+    get:
+      summary: Order Profile
+      description: Profile documentation for Order resources.
+      tags:
+        - Profiles
+      responses:
+        '200':
+          description: Order profile HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /link-relations/:
+    get:
+      summary: Link Relations Documentation
+      description: HTML page documenting all custom link relations.
+      tags:
+        - Documentation
+      responses:
+        '200':
+          description: Link relations HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
 
 components:
   parameters:
@@ -1187,7 +1435,9 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT token authentication
+      description: |
+        JWT token obtained from /auth/login/. Include in Authorization header
+        as "Bearer <token>"
 
   schemas:
     Error:
@@ -1204,97 +1454,30 @@ components:
 
     User:
       type: object
-      additionalProperties: false
       required:
         - name
         - email
+        - password
       properties:
-        id:
-          type: integer
-          readOnly: true
-          example: 1
         name:
           type: string
-          maxLength: 120
-          minLength: 1
-          pattern: "^[A-Za-z]+\\s[A-Za-z]+.*$"
-          description: "Full name in format Firstname Lastname"
-          example: "John Doe"
+          description: User's full name (must contain space)
         email:
           type: string
-          maxLength: 250
           format: email
-          example: "john@example.com"
+          description: User's email address (must be unique)
+        password:
+          type: string
+          format: password
+          minLength: 6
+          description: User's password
         status:
           type: string
-          enum:
-            - active
-            - disabled
+          enum: [active, disabled]
           default: active
-          example: "active"
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-          example: "2024-01-15T10:30:00Z"
-
-    UserCreate:
-      type: object
-      required:
-        - name
-        - email
-      properties:
-        name:
-          type: string
-          description: Must contain first name and last name
-          example: "John Doe"
-        email:
-          type: string
-          example: "john@example.com"
-        status:
-          type: string
-          enum:
-            - active
-            - disabled
-          default: active
-          example: "active"
+          description: User account status
 
     Event:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          example: 1
-        title:
-          type: string
-          example: "Concert Night"
-        venue:
-          type: string
-          example: "Arena Stadium"
-        city:
-          type: string
-          example: "New York"
-        description:
-          type: string
-          example: "An amazing live concert"
-        starts_at:
-          type: string
-          format: date-time
-          example: "2024-06-15T19:00:00Z"
-        ends_at:
-          type: string
-          format: date-time
-          nullable: true
-          example: "2024-06-15T23:00:00Z"
-        status:
-          type: string
-          enum:
-            - active
-            - cancelled
-          example: "active"
-
-    EventCreate:
       type: object
       required:
         - title
@@ -1304,54 +1487,32 @@ components:
       properties:
         title:
           type: string
-          example: "Concert Night"
+          description: Event title
         venue:
           type: string
-          example: "Arena Stadium"
+          description: Event venue
         city:
           type: string
-          example: "New York"
+          description: City where event is held
         description:
           type: string
-          example: "An amazing live concert"
+          description: Event description
         starts_at:
           type: string
           format: date-time
-          example: "2024-06-15T19:00:00Z"
+          description: Event start time
         ends_at:
           type: string
           format: date-time
           nullable: true
-          example: "2024-06-15T23:00:00Z"
+          description: Event end time (optional)
         status:
           type: string
-          enum:
-            - active
-            - cancelled
+          enum: [active, cancelled]
           default: active
-          example: "active"
+          description: Event status
 
     Ticket:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          example: 1
-        name:
-          type: string
-          example: "VIP"
-        price:
-          type: number
-          example: 150.00
-        capacity:
-          type: integer
-          example: 100
-        remaining:
-          type: integer
-          example: 50
-
-    TicketCreate:
       type: object
       required:
         - name
@@ -1360,61 +1521,53 @@ components:
       properties:
         name:
           type: string
-          example: "VIP"
+          description: Ticket type name (e.g., "VIP", "Standard")
         price:
           type: number
           minimum: 0
-          example: 150.00
+          description: Ticket price
         capacity:
           type: integer
           minimum: 0
-          example: 100
+          description: Total ticket capacity
 
     Order:
       type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-          example: 1
-        user_id:
-          type: integer
-          example: 1
-        ticket_id:
-          type: integer
-          example: 5
-        status:
-          type: string
-          enum:
-            - used
-            - not_used
-          example: "not_used"
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-          example: "2024-01-20T12:00:00Z"
-
-    OrderCreate:
-      type: object
       required:
-        - user_id
         - ticket_id
       properties:
-        user_id:
-          type: integer
-          example: 1
         ticket_id:
           type: integer
-          example: 5
+          description: ID of the ticket to purchase
 
-    OrderUpdate:
+x-mediaTypes:
+  - mediaType: application/vnd.mason+json
+    schema:
       type: object
       properties:
-        status:
-          type: string
-          enum:
-            - used
-            - not_used
-          description: The new status of the order
-          example: "used"
+        "@namespaces":
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              name:
+                type: string
+                description: Namespace URL for link relations
+        "@controls":
+          type: object
+          description: Hypermedia controls for navigation and actions
+        "@error":
+          type: object
+          properties:
+            "@message":
+              type: string
+              description: Short error title
+            "@messages":
+              type: array
+              items:
+                type: string
+              description: Detailed error messages
+  
+externalDocs:
+  description: Link Relations Documentation
+  url: /api/link-relations/
