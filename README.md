@@ -51,6 +51,9 @@ Database is auto-created and seeded on server start.
 - Users can only view/modify their own orders
 - Password hashing using Werkzeug security
 
+### Deployment server:
+http://86.50.231.213:8080/
+
 ## Instructions
 
 ### Installing deps:
