@@ -51,12 +51,14 @@
 - In pyproject, we don't have to list the versions.
 
 ## Meeting 4.
-* **DATE:**
-* **PARTICIPANTS:**
-* **TEACHER:**
+* **DATE:** 13.4.2026
+* **PARTICIPANTS:** Md. Nur-E Ferdaus, Huan Vo
+* **TEACHER:** Mika Oja
 
 ### Action points
 *List here the actions points discussed with assistants*
+- Documentation section is totally fine.
+- Didn't evaluate the deployment section because of the old version of wiki.
 
 ### Notes
 *Add here notes that you consider important. This is not mandatory*
