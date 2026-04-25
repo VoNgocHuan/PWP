@@ -13,7 +13,6 @@ A web-based frontend client for the Ticketing REST API. Allows users to browse e
 - [Testing](#testing)
 - [Code Quality](#code-quality)
 - [API Endpoints Used](#api-endpoints-used)
-- [Troubleshooting](#troubleshooting)
 
 ## Overview
 
@@ -161,30 +160,6 @@ eslint app.js
 
 Configuration is in `.eslintrc.json`
 
-### Rules Applied
-
-- No unused variables
-- Prefer const over let
-- No implied eval
-- Require strict mode
-
-## Email Notifications (Optional)
-
-The client supports sending email confirmations via [EmailJS](https://www.emailjs.com/). This is optional and requires configuration:
-
-1. **Sign up** at emailjs.com (free tier available)
-2. **Create a service** (e.g., Gmail)
-3. **Create email templates** for:
-   - Purchase confirmation
-   - Cancellation confirmation
-4. **Replace placeholders** in `app.js`:
-   ```javascript
-   emailjs.init("YOUR_PUBLIC_KEY");
-   // In sendConfirmationEmail:
-   emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {...});
-   ```
-
-The email functionality will gracefully fail if not configured.
 
 ## API Endpoints Used
 
@@ -195,46 +170,3 @@ The email functionality will gracefully fail if not configured.
 | GET | `/api/events/` | No | List all events with tickets |
 | POST | `/api/orders/` | Yes | Purchase a ticket |
 | GET | `/api/users/<id>/orders/` | Yes | Get user's orders |
-
-## Troubleshooting
-
-### CORS Errors
-
-If you see CORS errors:
-- Ensure nginx is proxying `/api/` to the backend
-- Check nginx.conf configuration
-- Do not open `index.html` directly from file system
-
-### Login Fails
-
-- Check backend is running: `curl http://localhost:5000/api/`
-- Verify credentials are correct
-- Check browser console for errors
-
-### Events Not Loading
-
-- Check backend is accessible
-- Check API is running
-- Check browser console for network errors
-
-### Session Expired
-
-- Clear browser localStorage
-- Login again
-- JWT tokens expire after 24 hours
-
-## Project Structure
-
-```
-frontend/
-├── index.html       # Main HTML page
-├── app.js           # JavaScript client code
-├── nginx.conf       # nginx configuration
-├── Dockerfile       # Docker configuration
-├── .dockerignore   # Docker ignore file
-└── README.md       # This file
-```
-
-## License
-
-See project root LICENSE file.
