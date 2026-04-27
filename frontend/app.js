@@ -111,6 +111,9 @@ function renderEvents(events) {
                 Date: ${new Date(event.starts_at).toLocaleString()}<br>
                 Venue: ${event.venue}, ${event.city}
             </div>
+            <a class="event-map-btn" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(event.venue + ' ' + event.city)}" target="_blank">
+                Show on Map
+            </a>
             <div class="ticket-container">
                 ${ticketBoxes}
             </div>
@@ -357,6 +360,9 @@ async function loadEvents() {
                 Date: ${new Date(event.starts_at).toLocaleString()}<br>
                 Venue: ${event.venue}, ${event.city}
             </div>
+            <a class="event-map-btn" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(event.venue + ' ' + event.city)}" target="_blank">
+                Show on Map
+            </a>
             <div class="ticket-container">
                 ${ticketBoxes}
             </div>
@@ -406,6 +412,38 @@ function attachCancelHandlers() {
             }
         });
     });
+}
+
+function showInlineMap(eventId, venue, city, title) {
+    const container = document.getElementById(`event-map-${eventId}`);
+    if (!container || container.dataset.loaded) return;
+    container.dataset.loaded = "true";
+    
+    const FALLBACK_COORDS = {
+        "central park arena helsinki": [60.1699, 24.9384],
+        "convention center oulu": [65.0126, 25.4682],
+        "helsinki": [60.1699, 24.9384],
+        "oulu": [65.0126, 25.4682]
+    };
+    
+    let lat = 60.1699, lon = 24.9384;
+    const searchKey = `${venue} ${city}`.toLowerCase();
+    if (FALLBACK_COORDS[searchKey]) {
+        [lat, lon] = FALLBACK_COORDS[searchKey];
+    } else if (FALLBACK_COORDS[venue.toLowerCase()]) {
+        [lat, lon] = FALLBACK_COORDS[venue.toLowerCase()];
+    }
+    
+    const zoom = 15;
+    const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=${zoom}&size=400x200&markers=${lat},${lon},lightblue`;
+    
+    container.innerHTML = `
+        <div style="text-align:center;">
+            <img src="${mapUrl}" alt="Map" style="width:100%;max-width:400px;border-radius:6px;border:1px solid #ccc;">
+            <p style="margin:8px 0 0;font-size:0.85rem;color:#555;">${venue}, ${city}</p>
+            <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=${zoom}" target="_blank" style="font-size:0.8rem;color:#007bff;">Open in OSM</a>
+        </div>
+    `;
 }
 
 /**
