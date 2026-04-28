@@ -1,0 +1,44 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 2021,
+    "sourceType": "module"
+  },
+  "rules": {
+    "indent": ["error", 4],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "no-undef": "warn",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "brace-style": ["error", "1tbs"],
+    "comma-dangle": ["error", "never"],
+    "arrow-spacing": ["error", { "before": true, "after": true }],
+    "block-spacing": ["error", "always"],
+    "camelcase": ["warn", { "properties": "always" }],
+    "consistent-return": "warn",
+    "default-case": "warn",
+    "no-empty-function": "warn",
+    "no-eval": "error",
+    "no-implied-eval": "error",
+    "no-floating-decimal": "error",
+    "no-new-wrappers": "error",
+    "no-return-await": "error",
+    "no-shadow": "warn",
+    "no-throw-literal": "error",
+    "no-useless-call": "warn",
+    "no-useless-escape": "warn",
+    "prefer-const": "error",
+    "require-await": "error",
+    "radix": ["error", "always"],
+    "vars-on-top": "error",
+    "yoda": ["error", "never"]
+  }
+}

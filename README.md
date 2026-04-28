@@ -25,6 +25,7 @@ Testing:
 
 All Python dependencies are encoded in:
 - `pyproject.toml`
+- `pyproject.toml`
 
 ## Database
 
@@ -49,6 +50,9 @@ Database is auto-created and seeded on server start.
 - Protected endpoints require JWT token in Authorization header
 - Users can only view/modify their own orders
 - Password hashing using Werkzeug security
+
+### Deployment server:
+http://86.50.231.213:8080/
 
 ## Instructions
 
