@@ -111,9 +111,11 @@ function renderEvents(events) {
                 Date: ${new Date(event.starts_at).toLocaleString()}<br>
                 Venue: ${event.venue}, ${event.city}
             </div>
-            <a class="event-map-btn" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(event.venue + ' ' + event.city)}" target="_blank">
-                Show on Map
-            </a>
+            <button class="event-map-btn" data-event-id="${event.id}" data-venue="${event.venue}" data-city="${event.city}">
+            <div id="event-desc-${event.id}" class="event-description" style="display:none;">${event.description || ""}</div>
+                Show Map
+            </button>
+            <div id="event-map-${event.id}" class="inline-map-container"></div>
             <div class="ticket-container">
                 ${ticketBoxes}
             </div>
@@ -122,8 +124,12 @@ function renderEvents(events) {
         const titleEl = div.querySelector(".event-title");
         if (titleEl) {
             titleEl.style.cursor = "pointer";
-            titleEl.title = "Click to log view";
+            titleEl.title = "Click to toggle description";
+            const descEl = div.querySelector(".event-description");
             titleEl.addEventListener("click", async () => {
+                if (descEl) {
+                    descEl.style.display = descEl.style.display === "none" ? "block" : "none";
+                }
                 const userId = getUserId();
                 if (!userId || viewedThisSet.has(event.id)) return;
                 viewedThisSet.add(event.id);
@@ -135,6 +141,7 @@ function renderEvents(events) {
     });
 
     attachPurchaseHandlers();
+    attachMapHandlers();
 }
 
 /**
@@ -360,9 +367,11 @@ async function loadEvents() {
                 Date: ${new Date(event.starts_at).toLocaleString()}<br>
                 Venue: ${event.venue}, ${event.city}
             </div>
-            <a class="event-map-btn" href="https://www.openstreetmap.org/search?query=${encodeURIComponent(event.venue + ' ' + event.city)}" target="_blank">
-                Show on Map
-            </a>
+            <div id="event-desc-${event.id}" class="event-description" style="display:none;">${event.description || ""}</div>
+            <button class="event-map-btn" data-event-id="${event.id}" data-venue="${event.venue}" data-city="${event.city}">
+                Show Map
+            </button>
+            <div id="event-map-${event.id}" class="inline-map-container"></div>
             <div class="ticket-container">
                 ${ticketBoxes}
             </div>
@@ -371,8 +380,12 @@ async function loadEvents() {
         const titleEl = div.querySelector(".event-title");
         if (titleEl) {
             titleEl.style.cursor = "pointer";
-            titleEl.title = "Click to log view";
+            titleEl.title = "Click to toggle description";
+            const descEl = div.querySelector(".event-description");
             titleEl.addEventListener("click", async () => {
+                if (descEl) {
+                    descEl.style.display = descEl.style.display === "none" ? "block" : "none";
+                }
                 const userId = getUserId();
                 if (!userId || viewedThisSet.has(event.id)) return;
                 viewedThisSet.add(event.id);
@@ -384,6 +397,7 @@ async function loadEvents() {
     });
 
     attachPurchaseHandlers();
+    attachMapHandlers();
 }
 
 /**
@@ -395,6 +409,28 @@ function attachPurchaseHandlers() {
         button.addEventListener("click", () => {
             const ticketId = button.getAttribute("data-ticket-id");
             purchaseTicket(ticketId);
+        });
+    });
+}
+
+/**
+ * Attaches click handlers to map buttons.
+ */
+function attachMapHandlers() {
+    document.querySelectorAll("button.event-map-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            const eventId = button.getAttribute("data-event-id");
+            const venue = button.getAttribute("data-venue");
+            const city = button.getAttribute("data-city");
+            const mapContainer = document.getElementById(`event-map-${eventId}`);
+            if (mapContainer && mapContainer.dataset.loaded) {
+                const isHidden = mapContainer.style.display === "none" || mapContainer.style.display === "";
+                mapContainer.style.display = isHidden ? "block" : "none";
+                button.textContent = isHidden ? "Hide Map" : "Show Map";
+            } else {
+                showInlineMap(eventId, venue, city);
+                button.textContent = "Hide Map";
+            }
         });
     });
 }
@@ -414,36 +450,56 @@ function attachCancelHandlers() {
     });
 }
 
+const geocodeCache = new Map();
+
+async function geocodeLocation(venue, city) {
+    const cacheKey = `${venue},${city}`.toLowerCase();
+    if (geocodeCache.has(cacheKey)) {
+        return geocodeCache.get(cacheKey);
+    }
+    const query = encodeURIComponent(`${venue}, ${city}`);
+    try {
+        const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+            { headers: { "User-Agent": "PWP-Ticketing/1.0" } }
+        );
+        const data = await response.json();
+        if (data && data.length > 0) {
+            const result = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            geocodeCache.set(cacheKey, result);
+            return result;
+        }
+    } catch (e) {
+        console.error("Geocoding failed:", e);
+    }
+    return null;
+}
+
 function showInlineMap(eventId, venue, city, title) {
     const container = document.getElementById(`event-map-${eventId}`);
     if (!container || container.dataset.loaded) return;
     container.dataset.loaded = "true";
-    
-    const FALLBACK_COORDS = {
-        "central park arena helsinki": [60.1699, 24.9384],
-        "convention center oulu": [65.0126, 25.4682],
-        "helsinki": [60.1699, 24.9384],
-        "oulu": [65.0126, 25.4682]
+
+    const defaultCoords = city.toLowerCase().includes("oulu")
+        ? [65.0126, 25.4682]
+        : [60.1699, 24.9384];
+
+    const showMap = async (lat, lon) => {
+        container.style.height = "300px";
+        const map = L.map(container).setView([lat, lon], 15);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: '&copy; <a href="https://openstreetmap.org">OSM</a>'
+        }).addTo(map);
+        L.marker([lat, lon]).addTo(map).bindPopup(`${venue}, ${city}`).openPopup();
     };
-    
-    let lat = 60.1699, lon = 24.9384;
-    const searchKey = `${venue} ${city}`.toLowerCase();
-    if (FALLBACK_COORDS[searchKey]) {
-        [lat, lon] = FALLBACK_COORDS[searchKey];
-    } else if (FALLBACK_COORDS[venue.toLowerCase()]) {
-        [lat, lon] = FALLBACK_COORDS[venue.toLowerCase()];
-    }
-    
-    const zoom = 15;
-    const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=${zoom}&size=400x200&markers=${lat},${lon},lightblue`;
-    
-    container.innerHTML = `
-        <div style="text-align:center;">
-            <img src="${mapUrl}" alt="Map" style="width:100%;max-width:400px;border-radius:6px;border:1px solid #ccc;">
-            <p style="margin:8px 0 0;font-size:0.85rem;color:#555;">${venue}, ${city}</p>
-            <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}&zoom=${zoom}" target="_blank" style="font-size:0.8rem;color:#007bff;">Open in OSM</a>
-        </div>
-    `;
+
+    geocodeLocation(venue, city).then(coords => {
+        if (coords) {
+            showMap(coords[0], coords[1]);
+        } else {
+            showMap(defaultCoords[0], defaultCoords[1]);
+        }
+    });
 }
 
 /**
