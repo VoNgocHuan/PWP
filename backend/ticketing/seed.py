@@ -31,7 +31,7 @@ def seed_database():
     events = [
         Event(
             title="Summer Concert",
-            venue="Central Park Arena",
+            venue="Musiikkitalo",
             city="Helsinki",
             description="A great summer concert featuring local bands",
             starts_at=datetime.now() + timedelta(days=30),
@@ -39,7 +39,7 @@ def seed_database():
         ),
         Event(
             title="Tech Conference 2026",
-            venue="Convention Center",
+            venue="Ouluhalli",
             city="Oulu",
             description="Annual technology conference",
             starts_at=datetime.now() + timedelta(days=60),
