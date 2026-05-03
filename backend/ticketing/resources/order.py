@@ -7,9 +7,8 @@ This module provides REST API endpoints for order management:
 """
 import json
 import logging
-import os
 import requests
-from flask import request, Response, url_for, g
+from flask import request, Response, url_for, g, current_app
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -34,7 +33,7 @@ def send_email_notification(user, ticket, order):
     Returns:
         bool: True if notification was sent successfully, False otherwise
     """
-    email_service_url = os.environ.get("EMAIL_SERVICE_URL", "http://localhost:5001")
+    email_service_url = current_app.config.get("EMAIL_SERVICE_URL")
 
     if not email_service_url:
         logger.debug("EMAIL_SERVICE_URL not set, skipping email notification")

@@ -53,3 +53,6 @@ node_modules/
 
 instance/development.db
 /docs
+!/docs/
+!/docs/auxiliary-services/
+!/docs/auxiliary-services/email-service.md

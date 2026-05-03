@@ -41,6 +41,7 @@ class Config:
     REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
     REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
     REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
+    EMAIL_SERVICE_URL = os.environ.get("EMAIL_SERVICE_URL", "http://localhost:5001")
 
 
 class DevelopmentConfig(Config):
@@ -62,6 +63,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
     REDIS_DB = 1
+    EMAIL_SERVICE_URL = ""
 
 
 config = {

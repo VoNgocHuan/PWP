@@ -1,228 +1,148 @@
 # Email Auxiliary Service
 
-An independent microservice that sends email confirmations when tickets are purchased through the main ticketing API.
+This is an independent Flask microservice for ticket purchase confirmation emails.
+The main Ticketing API calls this service after an order has been created.
 
-## Overview
+## Why This Service Exists
 
-The Email Auxiliary Service is a separate microservice designed to handle email notifications for the ticketing system. It listens for order notifications from the main API and sends confirmation emails to buyers when they purchase tickets.
+Email delivery is a separate operational concern from selling tickets. SMTP calls can be slow, fail because of network or provider issues, and require credentials or provider configuration. If the main API sent email directly inside the order endpoint, a mail problem could slow down or break ticket purchasing.
 
-### Why This Service is Necessary
+Keeping email delivery in a separate service gives the system:
 
-Sending emails directly from the main API would be problematic for several reasons:
-
-1. **Blocking I/O**: SMTP operations are slow and unreliable - they require network connections to external mail servers and can take several seconds to complete. This would block API responses and degrade user experience.
-
-2. **Failure Isolation**: If the email server (e.g., Gmail SMTP) is down or experiencing issues, it should not affect the main API's ability to process ticket purchases.
-
-3. **Separation of Concerns**: Email credentials and delivery logic should be separate from the core ticketing business logic. The main API handles ordering; this service handles notifications.
-
-4. **Reliability and Retry**: The email service can implement retry logic for failed deliveries independently, without requiring changes to the main API.
-
-5. **Scalability**: Email delivery can be scaled independently from the main API based on traffic patterns.
+- Failure isolation: ticket purchase can succeed even if email delivery fails.
+- Separation of concerns: the main API owns orders, the email service owns notifications.
+- Easier provider replacement: MailHog can be used in development and a real SMTP server later.
+- Independent demonstration and monitoring through service logs and the fake inbox.
 
 ## Architecture
 
-```
-┌─────────────────┐         HTTP POST          ┌─────────────────┐
-│   Main API       │ ───────────────────────▶│  Email Service  │
-│  (port 5000)    │    /notify/order       │ (port 5001)    │
-└─────────────────┘                           └─────────────────┘
-                                                      │
-                                                      ▼
-                                                ┌───────────┐
-                                                │ Console   │
-                                                │ Print    │
-                                                └───────────┘
+```text
+Frontend
+  -> POST /api/orders/
+      -> Ticketing API
+          -> POST /notify/order
+              -> Email Service
+                  -> SMTP
+                      -> MailHog fake inbox
 ```
 
-### Communication Protocol
+## Communication
 
-The main API sends a POST request to the email service when an order is created:
+The main API sends an HTTP request to the email service after creating an order.
 
-- **Endpoint**: `http://localhost:5001/notify/order`
-- **Method**: POST
-- **Content-Type**: application/json
+```text
+POST /notify/order
+Content-Type: application/json
+```
 
-**Request Body**:
+Example body:
+
 ```json
 {
-    "user_email": "buyer@example.com",
-    "user_name": "John Doe",
-    "event_title": "Rock Concert",
-    "ticket_name": "VIP",
-    "order_id": 42
+  "user_email": "buyer@example.com",
+  "user_name": "John Doe",
+  "event_title": "Rock Concert",
+  "ticket_name": "VIP",
+  "order_id": 42
 }
 ```
 
-**Success Response** (200):
+Success response:
+
 ```json
 {
-    "message": "Email sent successfully",
-    "order_id": 42
+  "message": "Email sent successfully",
+  "order_id": 42
 }
-```
-
-**Error Responses**:
-- 400: Validation error (missing or invalid fields)
-- 415: Unsupported media type (not JSON)
-- 500: Internal server error
-
-## Installation
-
-### Prerequisites
-
-- Python 3.8 or higher
-
-### Steps
-
-1. Navigate to the email-service directory:
-   ```bash
-   cd email-service
-   ```
-
-2. Create a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   ```
-
-3. Activate the virtual environment:
-   - Windows: `venv\Scripts\activate`
-   - Linux/Mac: `source venv/bin/activate`
-
-4. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Configuration
-
-The service can be configured using environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SERVICE_HOST` | `0.0.0.0` | Host to bind to |
-| `SERVICE_PORT` | `5001` | Port to listen on |
-| `LOG_LEVEL` | `INFO` | Logging level |
-| `SMTP_ENABLED` | `false` | Enable real SMTP sending |
-| `SMTP_HOST` | `smtp.gmail.com` | SMTP server host |
-| `SMTP_PORT` | `587` | SMTP server port |
-| `SMTP_USER` | (empty) | SMTP username |
-| `SMTP_PASSWORD` | (empty) | SMTP password |
-| `SMTP_FROM` | `noreply@ticketing.com` | From email address |
-
-## Running the Service
-
-### Development Mode
-
-```bash
-python app.py
-```
-
-The service will start on `http://localhost:5001`.
-
-### With Custom Port
-
-```bash
-set SERVICE_PORT=5002
-python app.py
-```
-
-Or on Linux/Mac:
-```bash
-SERVICE_PORT=5002 python app.py
-```
-
-### Verify Service is Running
-
-```bash
-curl http://localhost:5001/health
-```
-
-Expected response:
-```json
-{"status": "healthy", "service": "email-service"}
-```
-
-## Connecting to the Main API
-
-To enable the main API to notify the email service when tickets are purchased:
-
-1. Set the environment variable before running the main API:
-   ```bash
-   set EMAIL_SERVICE_URL=http://localhost:5001
-   ```
-
-2. Start the main API:
-   ```bash
-   cd backend
-   flask --app=ticketing --debug run
-   ```
-
-The main API will now send a POST request to the email service whenever an order is created.
-
-## Testing
-
-### Manual Test
-
-Send a test notification using curl:
-
-```bash
-curl -X POST http://localhost:5001/notify/order ^
-  -H "Content-Type: application/json" ^
-  -d "{\"user_email\": \"test@example.com\", \"user_name\": \"Test User\", \"event_title\": \"Test Event\", \"ticket_name\": \"VIP\", \"order_id\": 1}"
-```
-
-You should see the confirmation email printed to the console.
-
-### Health Check
-
-```bash
-curl http://localhost:5001/health
-```
-
-## Linting
-
-Run pylint to check code quality:
-
-```bash
-pylint service.py config.py app.py
-```
-
-Expected output should show no errors (score ~9.0+).
-
-## Project Structure
-
-```
-email-service/
-├── app.py          # Flask application and endpoints
-├── config.py       # Service configuration
-├── service.py     # Email sending logic
-├── requirements.txt
-├── README.md      # This file
-└── .pylintrc    # Pylint configuration
 ```
 
 ## Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Health check |
-| `/notify/order` | POST | Handle order notification |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check and SMTP configuration status |
+| POST | `/notify/order` | Send a ticket purchase confirmation email |
 
-## Troubleshooting
+## Running With Docker
 
-### Connection Refused
+From the repository root:
 
-If the main API cannot connect to the email service:
-1. Check the email service is running (`curl http://localhost:5001/health`)
-2. Verify `EMAIL_SERVICE_URL` is set correctly
-3. Check firewall settings are not blocking the port
+```bash
+docker-compose up --build
+```
 
-### Service Not Starting
+Services:
 
-1. Check port 5001 is not in use: `netstat -ano | findstr 5001`
-2. Try a different port: `set SERVICE_PORT=5002`
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:8080 |
+| Main API | http://localhost:5000/api/ |
+| Email service | http://localhost:5001 |
+| MailHog inbox | http://localhost:8025 |
 
-## License
+The Docker setup configures the email service to send through MailHog:
 
-This project is part of the PWP Spring 2026 Ticketing System.
+```text
+SMTP_ENABLED=true
+SMTP_HOST=mailhog
+SMTP_PORT=1025
+```
+
+## Manual Development Run
+
+Install dependencies:
+
+```bash
+cd email-service
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Run the service:
+
+```bash
+python app.py
+```
+
+By default, manual mode prints emails to the console. To send through a local fake SMTP server:
+
+```bash
+set SMTP_ENABLED=true
+set SMTP_HOST=localhost
+set SMTP_PORT=1025
+python app.py
+```
+
+## Manual Test
+
+```bash
+curl -X POST http://localhost:5001/notify/order ^
+  -H "Content-Type: application/json" ^
+  -d "{\"user_email\":\"test@example.com\",\"user_name\":\"Test User\",\"event_title\":\"Test Event\",\"ticket_name\":\"VIP\",\"order_id\":1}"
+```
+
+When running with Docker, open MailHog to inspect the delivered email:
+
+```text
+http://localhost:8025
+```
+
+## Linting
+
+```bash
+pylint app.py config.py service.py
+```
+
+## Project Structure
+
+```text
+email-service/
+  app.py            Flask endpoints
+  config.py         Environment-based configuration
+  service.py        Email formatting and SMTP delivery
+  Dockerfile        Container image
+  requirements.txt  Python dependencies
+  README.md         Service documentation
+  .pylintrc         Linting configuration
+```

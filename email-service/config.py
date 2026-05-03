@@ -19,13 +19,14 @@ class Config:
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
     SMTP_ENABLED = os.environ.get("SMTP_ENABLED", "false").lower() == "true"
-    SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+    SMTP_HOST = os.environ.get("SMTP_HOST", "localhost")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", "1025"))
+    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "false").lower() == "true"
     SMTP_USER = os.environ.get("SMTP_USER", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM = os.environ.get("SMTP_FROM", "noreply@ticketing.com")
 
-    PRINT_TO_CONSOLE = True
+    PRINT_TO_CONSOLE = os.environ.get("PRINT_TO_CONSOLE", "true").lower() == "true"
 
 
 class DevelopmentConfig(Config):

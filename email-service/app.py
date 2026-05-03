@@ -41,7 +41,13 @@ def create_app(config_name="default"):
             Response: JSON health status
         """
         return Response(
-            json.dumps({"status": "healthy", "service": "email-service"}),
+            json.dumps({
+                "status": "healthy",
+                "service": "email-service",
+                "smtp_enabled": flask_app.config["SMTP_ENABLED"],
+                "smtp_host": flask_app.config["SMTP_HOST"],
+                "smtp_port": flask_app.config["SMTP_PORT"]
+            }),
             200,
             mimetype="application/json"
         )
@@ -122,8 +128,10 @@ def create_app(config_name="default"):
     return flask_app
 
 
+application = create_app()
+
+
 if __name__ == "__main__":
     cfg = config["default"]
-    app = create_app()
     LOGGER.info("Starting email service on %s:%s", cfg.SERVICE_HOST, cfg.SERVICE_PORT)
-    app.run(host=cfg.SERVICE_HOST, port=cfg.SERVICE_PORT, debug=cfg.DEBUG)
+    application.run(host=cfg.SERVICE_HOST, port=cfg.SERVICE_PORT, debug=cfg.DEBUG)
