@@ -29,7 +29,6 @@ api_bp.add_url_rule("/profiles/user/", "profile_user", views.profile_user)
 api_bp.add_url_rule("/profiles/event/", "profile_event", views.profile_event)
 api_bp.add_url_rule("/profiles/ticket/", "profile_ticket", views.profile_ticket)
 api_bp.add_url_rule("/profiles/order/", "profile_order", views.profile_order)
-api_bp.add_url_rule("/profiles/error-profile/", "profile_error", views.profile_error)
 
 # Authentication endpoints
 api.add_resource(AuthLogin, "/auth/login/")

@@ -142,27 +142,3 @@ def profile_order():
     </html>
     """
     return Response(html, mimetype="text/html")
-
-
-def profile_error():
-    """Error profile documentation.
-
-    Returns an HTML page describing the format of error responses.
-    Error responses include: @message, @messages, resource_url, profile.
-    """
-    html = """
-    <html>
-    <head><title>Error Profile</title></head>
-    <body>
-        <h1>Error Profile</h1>
-        <p>Error responses contain:</p>
-        <ul>
-            <li>@message - Short error title</li>
-            <li>@messages - Array of error details</li>
-            <li>resource_url - The URL that caused the error</li>
-            <li>profile - Link to this profile</li>
-        </ul>
-    </body>
-    </html>
-    """
-    return Response(html, mimetype="text/html")

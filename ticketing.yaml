@@ -490,6 +490,15 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
+        '403':
+          description: Forbidden - Cannot view other user's orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Cannot view other user's orders"
         '404':
           description: User not found
           content:
@@ -969,66 +978,6 @@ paths:
               example:
                 error: "Not Found"
                 message: "Ticket or event not found"
-    
-    put:
-      summary: Update a ticket
-      description: |
-        Update details of a specific ticket by ID for a specific event by ID. 
-        Requires authentication.
-      operationId: updateTicket
-      tags:
-        - Tickets
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Ticket'
-            example:
-              name: "VIP Updated"
-              price: 175.00
-              capacity: 150
-      responses:
-        '204':
-          description: Ticket updated
-        '400':
-          description: Invalid request body
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Bad Request"
-                message: "Invalid request body"
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unauthorized"
-                message: "Authentication required"
-        '404':
-          description: Ticket or event not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Not Found"
-                message: "Ticket or event not found"
-        '415':
-          description: Unsupported media type - JSON required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Unsupported Media Type"
-                message: "Content-Type must be application/json"
 
     delete:
       summary: Delete a ticket
@@ -1253,6 +1202,15 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
+        '403':
+          description: Forbidden - Cannot view other user's order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Cannot view other user's order"
         '404':
           description: Order not found
           content:
@@ -1285,6 +1243,15 @@ paths:
               example:
                 error: "Unauthorized"
                 message: "Authentication required"
+        '403':
+          description: Forbidden - Cannot delete other user's order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Forbidden"
+                message: "Cannot delete other user's order"
         '404':
           description: Order not found
           content:
@@ -1511,6 +1478,10 @@ components:
           enum: [active, cancelled]
           default: active
           description: Event status
+        created_at:
+          type: string
+          format: date-time
+          description: Event creation timestamp
 
     Ticket:
       type: object
