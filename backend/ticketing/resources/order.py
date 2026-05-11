@@ -7,7 +7,8 @@ This module provides REST API endpoints for order management:
 """
 import json
 import logging
-from flask import request, Response, url_for, g
+import requests
+from flask import request, Response, url_for, g, current_app
 from flask_restful import Resource
 from jsonschema import validate, ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -19,6 +20,51 @@ from ..cache import get_cache
 from ..utils import MasonBuilder, LINK_RELATIONS_URL, create_error_response, MASON
 
 logger = logging.getLogger("ticketing")
+
+
+def send_email_notification(user, ticket, order):
+    """Send order notification to the email auxiliary service.
+
+    Args:
+        user: The user who placed the order
+        ticket: The ticket that was purchased
+        order: The order that was created
+
+    Returns:
+        bool: True if notification was sent successfully, False otherwise
+    """
+    email_service_url = current_app.config.get("EMAIL_SERVICE_URL")
+
+    if not email_service_url:
+        logger.debug("EMAIL_SERVICE_URL not set, skipping email notification")
+        return False
+
+    payload = {
+        "user_email": user.email,
+        "user_name": user.name,
+        "event_title": ticket.event.title,
+        "ticket_name": ticket.name,
+        "order_id": order.id
+    }
+
+    try:
+        response = requests.post(
+            f"{email_service_url}/notify/order",
+            json=payload,
+            timeout=5
+        )
+        if response.status_code == 200:
+            logger.info("Email notification sent for order #%s", order.id)
+            return True
+        else:
+            logger.warning("Email notification failed for order #%s: %s", order.id, response.status_code)
+            return False
+    except requests.RequestException as exc:
+        logger.warning("Failed to connect to email service: %s", exc)
+        return False
+    except Exception as exc:
+        logger.warning("Unexpected error sending email notification: %s", exc)
+        return False
 
 
 class OrderCollection(Resource):
@@ -92,6 +138,8 @@ class OrderCollection(Resource):
             cache.invalidate_pattern("event:*")
             
             logger.info(f"Order created: user_id={user.id}, ticket_id={ticket.id}, remaining={ticket.remaining}")
+
+            send_email_notification(user, ticket, order)
             
         except IntegrityError as exc:
             db.session.rollback()

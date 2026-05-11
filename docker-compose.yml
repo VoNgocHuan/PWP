@@ -21,6 +21,30 @@ services:
       timeout: 5s
       retries: 5
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"
+    restart: unless-stopped
+
+  email-service:
+    build:
+      context: ./email-service
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      - SERVICE_PORT=5001
+      - SMTP_ENABLED=true
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_USE_TLS=false
+      - SMTP_FROM=noreply@ticketing.com
+      - PRINT_TO_CONSOLE=true
+    depends_on:
+      - mailhog
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -38,11 +62,14 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_DB=0
+      - EMAIL_SERVICE_URL=http://email-service:5001
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      email-service:
+        condition: service_started
     restart: unless-stopped
 
   frontend:

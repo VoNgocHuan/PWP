@@ -148,7 +148,7 @@ class EventItem(Resource):
 
         event.deserialize(request.json)
 
-        has_orders = any(ticket.orders for ticket in event.ticket)
+        has_orders = any(ticket.orders for ticket in event.tickets)
         if has_orders:
             return create_error_response(409, "Conflict", "Cannot update event with existing orders")
 

@@ -10,3 +10,4 @@ SQLAlchemy==2.0.46
 psycopg2-binary==2.9.10
 Werkzeug==3.1.5
 jsonschema==4.23.0
+requests==2.31.0
