@@ -56,19 +56,13 @@ http://86.50.231.213:8080/
 
 ## Instructions
 
-### Installing deps:
-```bash
-pip install -r requirements.txt
-```
+### Requirements:
 
-Or install from pyproject.toml:
-```bash
-pip install pyjwt redis
-```
+Make sure you have Docker and Docker Compose installed.
 
 ### Running the API:
 ```bash
-flask --app=ticketing --debug run
+docker-compose up -d --build
 ```
 
 The server will:
