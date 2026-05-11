@@ -3,8 +3,7 @@
 This module provides:
 - MasonBuilder: A dictionary subclass for building Mason hypermedia documents
 - URL converters: For converting between URLs and model objects
-- create_error_response: Helper for creating Mason error responses
-- Constants: LINK_RELATIONS_URL, ERROR_PROFILE, MASON content type
+- Constants: LINK_RELATIONS_URL, MASON content type
 """
 import json
 from flask import request, Response
@@ -17,27 +16,8 @@ from .models import User, Event, Ticket, Order
 LINK_RELATIONS_URL = "/api/link-relations#"
 """URL for the link relations documentation."""
 
-ERROR_PROFILE = "/api/profiles/error-profile/"
-"""URL for the error profile documentation."""
-
 MASON = "application/vnd.mason+json"
 """Mason hypermedia content type."""
-
-
-def create_error_response(status_code, title, message=None):
-    """
-    Create a Mason-formatted error response.
-    :param int status_code: HTTP status code
-    :param str title: Short title for the error
-    :param str message: Longer human-readable description
-    :return: Flask Response object with Mason error format
-    """
-    resource_url = request.path
-    body = MasonBuilder(resource_url=resource_url)
-    body.add_error(title, message)
-    body.add_control("profile", href=ERROR_PROFILE)
-    return Response(json.dumps(body), status_code, mimetype=MASON)
-
 
 class MasonBuilder(dict):
     """Dictionary subclass for building Mason hypermedia documents.
